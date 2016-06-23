@@ -14,7 +14,6 @@ class RedditService {
 
   val apiWrapper = new RedditApiWrapper
 
-
   /**
     * Obtain OAuth2 permissions for a reddit account (the user specifies in step 3)
     *
@@ -46,8 +45,8 @@ class RedditService {
     *
     * which returns the same JSON blob with a new access_token.
     */
-  def commandLineOAuthLogin(): Unit = {
 
+  def oAuthRequestPermissions(): Unit = {
     for {
       authResponse ← apiWrapper.authorizeUser() //step 1
       redirectUrl ← authResponse.headers.find(_.name == "Location").map(_.value)
@@ -59,9 +58,14 @@ class RedditService {
         Desktop.getDesktop.browse(new URI(redirectUrl))
       }
 
+      println("Pass the 'code' query parameter from the redirect url to this program by running `gradle run -Pcode=123` ")
       //todo store the refresh_token and access_token in database, so process doesn't have to be repeated more than once
     }
+  }
 
-    //todo error case
+  def oAuthGetToken(code: String): Unit = {
+    for (tokenResponse ← apiWrapper.retreiveAccessToken(code)) {
+      println(tokenResponse.message.entity)
+    }
   }
 }

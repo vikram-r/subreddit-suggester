@@ -3,8 +3,6 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'scala'
-apply plugin: 'application'
-mainClassName = "Console"
 
 sourceCompatibility = 1.5
 
@@ -17,4 +15,11 @@ dependencies {
     compile 'org.scala-lang:scala-library:2.11.7'
     compile group: 'com.typesafe.akka', name: 'akka-actor_2.11', version: '2.4.1'
     compile group: 'io.spray', name: 'spray-client_2.11', version: '1.3.3'
+}
+
+task run (type:JavaExec) {
+    main = "Console"
+    classpath = sourceSets.main.runtimeClasspath
+
+    systemProperties System.properties //pass the gradle system properties (set via command line) to jvm
 }
