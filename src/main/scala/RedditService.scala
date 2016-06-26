@@ -1,9 +1,14 @@
 import java.awt.Desktop
 import java.net.URI
+import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import spray.http.OAuth2BearerToken
+import spray.json._
+import DefaultJsonProtocol._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext}
 
 object RedditService {
 
@@ -47,8 +52,9 @@ class RedditService {
     */
 
   def oAuthRequestPermissions(): Unit = {
+    val response = apiWrapper.authorizeUser()
     for {
-      authResponse ← apiWrapper.authorizeUser() //step 1
+      authResponse ← response //step 1
       redirectUrl ← authResponse.headers.find(_.name == "Location").map(_.value)
     } {
       println(redirectUrl)
@@ -57,15 +63,30 @@ class RedditService {
       if(Desktop.isDesktopSupported) {
         Desktop.getDesktop.browse(new URI(redirectUrl))
       }
-
-      println("Pass the 'code' query parameter from the redirect url to this program by running `gradle run -Pcode=123` ")
+      println("Pass the 'code' query parameter from the redirect url to this program by running `gradle run -Dcode=123` ")
       //todo store the refresh_token and access_token in database, so process doesn't have to be repeated more than once
     }
+    //todo need to handle these futures better. This way still doesn't work
+    Await.result(response, Duration(10000, TimeUnit.MILLISECONDS)) //oauth login process needs to be sequential
   }
 
-  def oAuthGetToken(code: String): Unit = {
-    for (tokenResponse ← apiWrapper.retreiveAccessToken(code)) {
+  def oAuthGetToken(code: String): Option[String] = {
+    val response = apiWrapper.retreiveAccessToken(code)
+    for (tokenResponse ← response) {
+
+//      val json = tokenResponse.toJson
+//      println(json)
       println(tokenResponse.message.entity)
     }
+
+    Await.result(response, Duration(10000, TimeUnit.MILLISECONDS)) //oauth login process needs to be sequential
+    Some("")
+  }
+
+  def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[String] = {
+    for (response ← apiWrapper.getSubscribedSubreddits) {
+      println(response.message)
+    }
+    List.empty
   }
 }

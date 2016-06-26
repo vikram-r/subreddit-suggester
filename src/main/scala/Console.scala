@@ -1,19 +1,31 @@
+import spray.http.OAuth2BearerToken
+
+import scala.concurrent.Promise
 
 class Console {
 
   val redditService = new RedditService
 
   def start(args: Array[String]): Unit = {
-
-    //this is kind of a disaster, but it's temporary until I move this to a webserver
-    (sys.props.get("code"), sys.props.get("token")) match {
-      case (Some(code), Some(token)) ⇒ //todo do subreddit logic
-      case (None, Some(token)) => //todo do subreddit logic
-      case (Some(code), None) ⇒
-        redditService.oAuthGetToken(code)
-      case _ ⇒
-        redditService.oAuthRequestPermissions()
+    //todo still a mess
+    val oauthToken = {
+      sys.props.get("token").orElse(
+        sys.props.get("code") match {
+          case Some(code) ⇒ redditService.oAuthGetToken(code)
+          case None ⇒
+            redditService.oAuthRequestPermissions()
+            None
+        }
+      ).map(OAuth2BearerToken)
     }
+
+    if (oauthToken.isEmpty) {
+      println("Please re-run with a valid oauth2 token")
+      System.exit(0)
+    }
+
+    implicit val oAuth2BearerToken = oauthToken.get
+    redditService.getSubscribedSubreddits()
   }
 }
 
