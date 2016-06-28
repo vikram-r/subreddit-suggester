@@ -7,6 +7,9 @@ class Console {
   val redditService = new RedditService
 
   def start(args: Array[String]): Unit = {
+    val clientId = sys.props.get("com.vikram.subredditsuggester.client_id").get
+    val clientSecret = sys.props.get("com.vikram.subredditsuggester.client_secret").get
+
     //todo still a mess
     val oauthToken = {
       sys.props.get("token").orElse(
@@ -25,7 +28,7 @@ class Console {
     }
 
     implicit val oAuth2BearerToken = oauthToken.get
-    redditService.getSubscribedSubreddits()
+//    redditService.getSubscribedSubreddits()
   }
 }
 

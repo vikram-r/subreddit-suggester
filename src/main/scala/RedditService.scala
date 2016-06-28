@@ -13,18 +13,23 @@ object RedditService {
 }
 
 class RedditService {
+
   import RedditService._
   import CustomJsonProtocols._
   import ExecutionContext.Implicits.global
 
-  val apiWrapper = new RedditApiWrapper
+  val apiWrapper = new RedditApiWrapper(
+    clientId = sys.props.get("com.vikram.subredditsuggester.client_id").get,
+    clientSecret = sys.props.get("com.vikram.subredditsuggester.client_secret").get,
+    redirectUri = sys.props.get("com.vikram.subredditsuggester.redirect_uri").get
+  )
 
   /**
     * Obtain OAuth2 permissions for a reddit account (the user specifies in step 3)
     *
     * 1. Get the authorization token by GETing
-    *    https://www.reddit.com/api/v1/authorize?client_id=CLIENT_ID&response_type=TYPE&
-    *    state=RANDOM_STRING&redirect_uri=URI&duration=DURATION&scope=SCOPE_STRING
+    * https://www.reddit.com/api/v1/authorize?client_id=CLIENT_ID&response_type=TYPE&
+    * state=RANDOM_STRING&redirect_uri=URI&duration=DURATION&scope=SCOPE_STRING
     *
     * 2. The response contains a redirect URL (set in the reddit app), which should be opened
     *    in the web browser

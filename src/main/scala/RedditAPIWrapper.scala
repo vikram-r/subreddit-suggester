@@ -24,16 +24,23 @@ object RedditApiWrapper {
 }
 
 
-class RedditApiWrapper() {
+class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: String) {
   import RedditApiWrapper._
+
+  require(clientId != null, "missing client id")
+  require(clientSecret != null, "missing client secret")
+  require(redirectUri != null, "missing redirect uri")
 
   //todo load from config
   val BASE_URL = "https://www.reddit.com/api/v1"
   val OAUTH_BASE_URL = "https://oauth.reddit.com/api/v1" //use this url as the base after the user is validated with oauth
-  val CLIENT_ID = "G7_Lv9YNO8oIDA"
-  val CLIENT_SECRET: String = null
-  val REDIRECT_URI = "https://127.0.0.1:65010/authorize_callback"
+  val CLIENT_ID = clientId
+  val CLIENT_SECRET = clientSecret
+  val REDIRECT_URI = redirectUri
 
+  println(s"CLIENT_ID: $CLIENT_ID")
+  println(s"CLIENT SECRET: $CLIENT_SECRET")
+  println(s"REDIRECT_URI: $REDIRECT_URI")
 
   /**
     * First step in getting oauth to work. See: https://github.com/reddit/reddit/wiki/OAuth2
