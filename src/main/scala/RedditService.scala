@@ -1,20 +1,20 @@
 import java.awt.Desktop
 import java.net.URI
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import spray.http.OAuth2BearerToken
 import spray.json._
-import DefaultJsonProtocol._
-
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
+import scala.util.Try
 
 object RedditService {
+
+  case class OAuthTokenResponse(access_token: String, token_type: String, expires_in: Long, refresh_token: String, scope: String)
 
 }
 
 class RedditService {
+  import RedditService._
+  import CustomJsonProtocols._
   import ExecutionContext.Implicits.global
 
   val apiWrapper = new RedditApiWrapper
@@ -64,7 +64,7 @@ class RedditService {
 
   def oAuthGetToken(code: String): Option[String] = {
     val tokenResponse = apiWrapper.retreiveAccessToken(code)
-    Some("")
+    Try(tokenResponse.entity.asString.parseJson.convertTo[OAuthTokenResponse].access_token).toOption
   }
 
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[String] = {
