@@ -52,34 +52,18 @@ class RedditService {
     */
 
   def oAuthRequestPermissions(): Unit = {
-    val response = apiWrapper.authorizeUser()
-    for {
-      authResponse ← response //step 1
-      redirectUrl ← authResponse.headers.find(_.name == "Location").map(_.value)
-    } {
+    val authResponse = apiWrapper.authorizeUser()
+    for(redirectUrl ← authResponse.headers.find(_.name == "Location").map(_.value)){
       println(redirectUrl)
-
-      //todo this is kind of lame, but it might be necessary. Need to figure out a good way to have a listener on the callback url
       if(Desktop.isDesktopSupported) {
         Desktop.getDesktop.browse(new URI(redirectUrl))
       }
       println("Pass the 'code' query parameter from the redirect url to this program by running `gradle run -Dcode=123` ")
-      //todo store the refresh_token and access_token in database, so process doesn't have to be repeated more than once
     }
-    //todo need to handle these futures better. This way still doesn't work
-    Await.result(response, Duration(10000, TimeUnit.MILLISECONDS)) //oauth login process needs to be sequential
   }
 
   def oAuthGetToken(code: String): Option[String] = {
-    val response = apiWrapper.retreiveAccessToken(code)
-    for (tokenResponse ← response) {
-
-//      val json = tokenResponse.toJson
-//      println(json)
-      println(tokenResponse.message.entity)
-    }
-
-    Await.result(response, Duration(10000, TimeUnit.MILLISECONDS)) //oauth login process needs to be sequential
+    val tokenResponse = apiWrapper.retreiveAccessToken(code)
     Some("")
   }
 

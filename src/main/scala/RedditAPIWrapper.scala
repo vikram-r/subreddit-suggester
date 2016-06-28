@@ -2,13 +2,18 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import akka.actor.Status.Success
 import akka.pattern.ask
 import akka.io.IO
 import akka.util.Timeout
+import com.sun.net.httpserver.Authenticator.Failure
 import spray.can.Http
 import spray.http.HttpMethods._
 import spray.http._
 import spray.httpx.RequestBuilding._
+
+import scala.concurrent.duration.Duration
+
 //import spray.client.pipelining._ todo maybe use this instead of RequestBuilding (seems more powerful)
 
 import scala.concurrent.{Await, Future}
@@ -33,17 +38,17 @@ class RedditApiWrapper() {
   /**
     * First step in getting oauth to work. See: https://github.com/reddit/reddit/wiki/OAuth2
     *
-    * Spray will automatically perform the redirect, due to max-redirects = 1 in application.conf
     * @param scope
     * @return
     */
-  def authorizeUser(scope: List[String] = List("mysubreddits","history")): Future[HttpResponse] = {
+  def authorizeUser(scope: List[String] = List("mysubreddits","history")): HttpResponse = {
     val authState = UUID.randomUUID()
     val duration = "permanent"
     val url = s"$BASE_URL/authorize?client_id=$CLIENT_ID&response_type=code&state=$authState&" +
       s"redirect_uri=$REDIRECT_URI&duration=$duration&scope=${scope.mkString(",")}"
 
-    (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
+    val response = (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
+    Await.result(response, Duration.Inf) //oauth login process needs to be synchronous
   }
 
   /**
@@ -52,11 +57,12 @@ class RedditApiWrapper() {
     *
     * @param code
     */
-  def retreiveAccessToken(code: String): Future[HttpResponse] = {
+  def retreiveAccessToken(code: String): HttpResponse = {
     val url = s"$BASE_URL/access_token"
     val form = FormData(Map("code" → code, "redirect_uri" → REDIRECT_URI, "grant_type" → "authorization_code"))
 
-    (IO(Http) ? (Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))).mapTo[HttpResponse]
+    val response = (IO(Http) ? (Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))).mapTo[HttpResponse]
+    Await.result(response, Duration.Inf)
   }
 
   /**
