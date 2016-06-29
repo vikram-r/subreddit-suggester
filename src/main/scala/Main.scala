@@ -2,7 +2,7 @@ import spray.http.OAuth2BearerToken
 
 import scala.concurrent.Promise
 
-class Console {
+class Main {
 
   val redditService = new RedditService
 
@@ -29,10 +29,10 @@ class Console {
   }
 }
 
-object Console {
+object Main {
   //static main for gradle entry point
   def main(args: Array[String]): Unit = {
-    val console = new Console
-    console.start(args)
+    val main = new Main
+    main.start(args)
   }
 }

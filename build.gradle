@@ -18,7 +18,7 @@ dependencies {
 }
 
 task run (type:JavaExec) {
-    main = "Console"
+    main = "Main"
     classpath = sourceSets.main.runtimeClasspath
 
     //extract properties from gradle.properties, and pass them as java system properties
