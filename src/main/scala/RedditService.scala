@@ -1,6 +1,7 @@
 import java.awt.Desktop
 import java.net.URI
 import akka.actor.ActorSystem
+import akka.util.Timeout
 import spray.http.OAuth2BearerToken
 import spray.json._
 import scala.concurrent.{Await, ExecutionContext}
@@ -12,7 +13,7 @@ object RedditService {
 
 }
 
-class RedditService {
+class RedditService(implicit val system: ActorSystem) {
 
   import RedditService._
   import CustomJsonProtocols._

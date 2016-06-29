@@ -15,12 +15,11 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 object RedditApiWrapper {
-  implicit val system = ActorSystem()
   implicit val timeout = Timeout(30, TimeUnit.SECONDS)
 }
 
 
-class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: String) {
+class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: String)(implicit val system: ActorSystem) {
   import RedditApiWrapper._
 
   require(clientId != null, "missing client id")

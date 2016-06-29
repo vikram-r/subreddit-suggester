@@ -27,7 +27,6 @@ object Main {
         case DoneMessage(Some(e), r) ⇒ println(e) //terminated early
       }
 
-      println("here")
       context.terminate()
     }
   }

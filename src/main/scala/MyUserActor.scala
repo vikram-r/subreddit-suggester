@@ -1,4 +1,4 @@
-import akka.actor.{Props, ActorLogging, Actor}
+import akka.actor.{ActorSystem, Props, ActorLogging, Actor}
 import akka.pattern
 import spray.http.OAuth2BearerToken
 
@@ -16,6 +16,10 @@ object MyUserActor {
 
 class MyUserActor extends Actor with ActorLogging {
   import MyUserActor._
+
+  //todo can RedditService and/or RedditApiWrapper be singletons?
+  //the actorsystem and timeout gets implicitly passed to the RedditService and RedditApiWrapper
+  implicit val system: ActorSystem = context.system
 
   val redditService = new RedditService
 
