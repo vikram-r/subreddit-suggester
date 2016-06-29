@@ -11,11 +11,7 @@ import spray.can.Http
 import spray.http.HttpMethods._
 import spray.http._
 import spray.httpx.RequestBuilding._
-
 import scala.concurrent.duration.Duration
-
-//import spray.client.pipelining._ todo maybe use this instead of RequestBuilding (seems more powerful)
-
 import scala.concurrent.{Await, Future}
 
 object RedditApiWrapper {
@@ -59,10 +55,10 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   }
 
   /**
-    * Retreive the refresh token that lasts for 1 hr. Uses the code extracted from the authorization
+    * Retreive the access token that lasts for 1 hr. Uses the code extracted from the authorization
     * redirect url query params.
     *
-    * @param code
+    * @param code the code
     */
   def retreiveAccessToken(code: String): HttpResponse = {
     val url = s"$BASE_URL/access_token"
@@ -73,7 +69,7 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   }
 
   /**
-    * Call this endpoint when the token has expired, and a new one needs to be retreived
+    * Call this endpoint when the token has expired, and a new one needs to be retrieved
     *
     * @param refreshToken the refresh token, from the response o
     * @return
