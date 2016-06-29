@@ -1,38 +1,34 @@
-import spray.http.OAuth2BearerToken
+import java.util.concurrent.TimeUnit
 
-import scala.concurrent.Promise
-
-class Main {
-
-  val redditService = new RedditService
-
-  def start(args: Array[String]): Unit = {
-    val oauthToken = {
-      sys.props.get("token").orElse(
-        sys.props.get("code") match {
-          case Some(code) ⇒ redditService.oAuthGetToken(code)
-          case None ⇒
-            redditService.oAuthRequestPermissions()
-            None
-        }
-      ).map(OAuth2BearerToken)
-    }
-
-    if (oauthToken.isEmpty) {
-      println("Please re-run with a valid oauth2 token (use -Dtoken=<token>)")
-      System.exit(0)
-    }
-    println(s"Using authenticated token: ${oauthToken.get}")
-
-    implicit val oAuth2BearerToken = oauthToken.get
-//    redditService.getSubscribedSubreddits()
-  }
-}
+import akka.actor.{ActorSystem, Props}
+import akka.dispatch.ExecutionContexts._
+import akka.pattern.ask
+import akka.util.Timeout
 
 object Main {
   //static main for gradle entry point
   def main(args: Array[String]): Unit = {
-    val main = new Main
-    main.start(args)
+    import MyUserActor._
+
+    val token = sys.props.get("token")
+    val code = sys.props.get("code")
+
+    implicit val timeout = Timeout(30, TimeUnit.SECONDS)
+    implicit val executionContext = global
+
+    val context = ActorSystem("System")
+
+    val myUserActor = context.actorOf(MyUserActor.props, "myUserActor")
+    val done = myUserActor ? StartMessage(token, code)
+
+    for (result ← done) {
+      result match {
+        case DoneMessage(None, r) ⇒ println(r) //results
+        case DoneMessage(Some(e), r) ⇒ println(e) //terminated early
+      }
+
+      println("here")
+      context.terminate()
+    }
   }
 }
