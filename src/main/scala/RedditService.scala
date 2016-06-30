@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import spray.http.OAuth2BearerToken
 import spray.json._
+import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Try
 
@@ -42,9 +43,11 @@ class RedditService(implicit val system: ActorSystem) {
   }
 
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[String] = {
-    for (response ← apiWrapper.getSubscribedSubreddits) {
-      println(response.message)
-    }
+    val response = Await.result(apiWrapper.getSubscribedSubreddits, Duration.Inf)
+
+    println(response.entity.asString)
+
+
     List.empty
   }
 }

@@ -28,7 +28,7 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
 
   //todo load from config
   val BASE_URL = "https://www.reddit.com/api/v1"
-  val OAUTH_BASE_URL = "https://oauth.reddit.com/api/v1" //use this url as the base after the user is validated with oauth
+  val OAUTH_BASE_URL = "https://oauth.reddit.com" //use this url as the base after the user is validated with oauth
   val CLIENT_ID = clientId
   val CLIENT_SECRET = clientSecret
   val REDIRECT_URI = redirectUri
@@ -82,7 +82,7 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
 
 
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): Future[HttpResponse] = {
-    val url = s"$BASE_URL/subreddits/mine/subscriber"
+    val url = s"$OAUTH_BASE_URL/subreddits/mine/subscriber.json?limit=10"
     (IO(Http) ? (Get(Uri(url)) ~> addCredentials(token))).mapTo[HttpResponse]
   }
 }
