@@ -82,7 +82,7 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
 
 
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): Future[HttpResponse] = {
-    val url = s"$OAUTH_BASE_URL/subreddits/mine/subscriber.json?limit=10"
+    val url = s"$OAUTH_BASE_URL/subreddits/mine/subscriber.json?limit=100"
     (IO(Http) ? (Get(Uri(url)) ~> addCredentials(token))).mapTo[HttpResponse]
   }
 }

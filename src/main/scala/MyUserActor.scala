@@ -50,8 +50,8 @@ class MyUserActor extends Actor with ActorLogging {
 
   def findSuggestedSubreddits()(implicit token: OAuth2BearerToken): List[String] = {
     println(s"Using authenticated token: ${token.token}")
-
-    redditService.getSubscribedSubreddits()
-//    List.empty
+    val subscribed = redditService.getSubscribedSubreddits()
+    println(subscribed)
+    subscribed
   }
 }

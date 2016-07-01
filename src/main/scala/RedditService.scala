@@ -8,15 +8,9 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Try
 
-object RedditService {
-
-  case class OAuthTokenResponse(access_token: String, token_type: String, expires_in: Long, refresh_token: String, scope: String)
-
-}
-
 class RedditService(implicit val system: ActorSystem) {
 
-  import RedditService._
+  import RedditDataModel._
   import CustomJsonProtocols._
   import ExecutionContext.Implicits.global
 
@@ -45,9 +39,6 @@ class RedditService(implicit val system: ActorSystem) {
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[String] = {
     val response = Await.result(apiWrapper.getSubscribedSubreddits, Duration.Inf)
 
-    println(response.entity.asString)
-
-
-    List.empty
+    response.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.toSubredditData.name)
   }
 }
