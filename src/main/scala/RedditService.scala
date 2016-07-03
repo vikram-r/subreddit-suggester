@@ -38,7 +38,6 @@ class RedditService(implicit val system: ActorSystem) {
 
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[String] = {
     val response = Await.result(apiWrapper.getSubscribedSubreddits, Duration.Inf)
-
-    response.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.toSubredditData.name)
+    response.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsSubredditData.name)
   }
 }
