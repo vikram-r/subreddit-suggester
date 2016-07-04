@@ -2,6 +2,11 @@ import akka.actor.{ActorSystem, Props, ActorLogging, Actor}
 import akka.pattern
 import spray.http.OAuth2BearerToken
 
+/**
+  * This actor is the "start" actor. It finds the subreddits the user is currently subscribed to, then
+  * kicks off messages per subscribed subreddit to other actors. It aggregates the results, then sends
+  * a complete message back to Main
+  */
 object MyUserActor {
 
   //recommended way to create a Props for an Actor (http://doc.akka.io/docs/akka/snapshot/scala/actors.html)
@@ -12,10 +17,13 @@ object MyUserActor {
 
   case class DoneMessage(reasonNotCompleted: Option[String] = None,
                          suggestedSubreddits: List[String] = List.empty)
+
+  var numSubredditsToAnalyze: Int = _
 }
 
 class MyUserActor extends Actor with ActorLogging {
   import MyUserActor._
+  import SubredditActor._
 
   //todo can RedditService and/or RedditApiWrapper be singletons?
   //the actorsystem and timeout gets implicitly passed to the RedditService and RedditApiWrapper
@@ -40,18 +48,25 @@ class MyUserActor extends Actor with ActorLogging {
       oauthToken match {
         case Some(oauth) ⇒
           implicit val oAuth2BearerToken = oauth
-          sender ! DoneMessage(suggestedSubreddits = findSuggestedSubreddits())
+          findSuggestedSubreddits()
+//          sender ! DoneMessage(suggestedSubreddits = findSuggestedSubreddits())
         case None ⇒
           sender ! DoneMessage(reasonNotCompleted = Some("Please re-run with a valid oauth2 token (use -Dtoken=<token>)"))
       }
+    case AnalyzedSubredditMessage(suggested) ⇒
+      //todo keep track of these, and once num received = subredditsToAnalyze, then aggregate results
     case _ ⇒
       log.error("Invalid Message")
   }
 
-  def findSuggestedSubreddits()(implicit token: OAuth2BearerToken): List[String] = {
+  def findSuggestedSubreddits()(implicit token: OAuth2BearerToken) = {
     println(s"Using authenticated token: ${token.token}")
-    val subscribed = redditService.getSubscribedSubreddits()
-    println(subscribed)
-    subscribed
+    val subscribed = redditService.getSubscribedSubreddits() //get subreddits user is subscribed to
+    println(subscribed.map(_.name))
+
+    numSubredditsToAnalyze = subscribed.size
+
+    //send a message per subreddit to SubredditActor
+    for (s ← subscribed) context.actorOf(SubredditActor.props) ! SubredditMessage(s, 0)
   }
 }

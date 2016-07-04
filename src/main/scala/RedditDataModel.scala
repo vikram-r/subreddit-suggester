@@ -20,12 +20,20 @@ object RedditDataModel {
       require(kind == "t5")
       SubredditData(data)
     }
+
+    lazy val dataAsCommentData = {
+      require(kind == "t1")
+      CommentData(data)
+    }
   }
 
   case class SubredditData(data: Map[String, JsValue]) {
-    lazy val name = {
-      data.get("display_name").map(_.convertTo[String]).get
-    }
+    lazy val name = data.get("display_name").map(_.convertTo[String]).get
+  }
+
+  case class CommentData(data: Map[String, JsValue]) {
+    lazy val author = data.get("author").map(_.convertTo[String]).get
+    lazy val comment = data.get("body").map(_.convertTo[String]).get
   }
 
 }

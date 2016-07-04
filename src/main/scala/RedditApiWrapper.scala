@@ -21,21 +21,18 @@ object RedditApiWrapper {
 
 class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: String)(implicit val system: ActorSystem) {
   import RedditApiWrapper._
+  import RedditDataModel._
 
   require(clientId != null, "missing client id")
   require(clientSecret != null, "missing client secret")
   require(redirectUri != null, "missing redirect uri")
 
-  //todo load from config
-  val BASE_URL = "https://www.reddit.com/api/v1"
+  val BASE_URL = "https://www.reddit.com"
+  val BASE_API_URL = s"$BASE_URL/api/v1"
   val OAUTH_BASE_URL = "https://oauth.reddit.com" //use this url as the base after the user is validated with oauth
   val CLIENT_ID = clientId
   val CLIENT_SECRET = clientSecret
   val REDIRECT_URI = redirectUri
-
-  println(s"CLIENT_ID: $CLIENT_ID")
-  println(s"CLIENT SECRET: $CLIENT_SECRET")
-  println(s"REDIRECT_URI: $REDIRECT_URI")
 
   /**
     * First step in getting oauth to work. See: https://github.com/reddit/reddit/wiki/OAuth2
@@ -46,7 +43,7 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   def authorizeUser(scope: List[String] = List("mysubreddits","history")): HttpResponse = {
     val authState = UUID.randomUUID()
     val duration = "permanent"
-    val url = s"$BASE_URL/authorize?client_id=$CLIENT_ID&response_type=code&state=$authState&" +
+    val url = s"$BASE_API_URL/authorize?client_id=$CLIENT_ID&response_type=code&state=$authState&" +
       s"redirect_uri=$REDIRECT_URI&duration=$duration&scope=${scope.mkString(",")}"
 
     val response = (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
@@ -60,7 +57,7 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
     * @param code the code
     */
   def retreiveAccessToken(code: String): HttpResponse = {
-    val url = s"$BASE_URL/access_token"
+    val url = s"$BASE_API_URL/access_token"
     val form = FormData(Map("code" → code, "redirect_uri" → REDIRECT_URI, "grant_type" → "authorization_code"))
 
     val response = (IO(Http) ? (Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))).mapTo[HttpResponse]
@@ -74,7 +71,7 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
     * @return
     */
   def refreshAccessToken(refreshToken: String): Future[HttpResponse] = {
-    val url = s"$BASE_URL/access_token"
+    val url = s"$BASE_API_URL/access_token"
     val form = FormData(Map("refresh_token" → refreshToken, "grant_type" → "refresh_token"))
 
     (IO(Http) ? (Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))).mapTo[HttpResponse]
@@ -84,5 +81,10 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): Future[HttpResponse] = {
     val url = s"$OAUTH_BASE_URL/subreddits/mine/subscriber.json?limit=100"
     (IO(Http) ? (Get(Uri(url)) ~> addCredentials(token))).mapTo[HttpResponse]
+  }
+
+  def getRecentCommentsForSubreddit(s: SubredditData): Future[HttpResponse] = {
+    val url = s"$BASE_URL/r/${s.name}/comments.json?limit=100"
+    (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
   }
 }

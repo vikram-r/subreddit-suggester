@@ -2,10 +2,10 @@ import java.awt.Desktop
 import java.net.URI
 import akka.actor.ActorSystem
 import akka.util.Timeout
-import spray.http.OAuth2BearerToken
+import spray.http.{HttpResponse, OAuth2BearerToken}
 import spray.json._
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Future, Await, ExecutionContext}
 import scala.util.Try
 
 class RedditService(implicit val system: ActorSystem) {
@@ -36,8 +36,14 @@ class RedditService(implicit val system: ActorSystem) {
     Try(tokenResponse.entity.asString.parseJson.convertTo[OAuthTokenResponse].access_token).toOption
   }
 
-  def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[String] = {
+  def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[SubredditData] = {
     val response = Await.result(apiWrapper.getSubscribedSubreddits, Duration.Inf)
-    response.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsSubredditData.name)
+    response.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsSubredditData)
   }
+
+  def getRecentComments(subredditData: SubredditData): Future[List[CommentData]] = {
+    val response = apiWrapper.getRecentCommentsForSubreddit(subredditData)
+    response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsCommentData))
+  }
+
 }
