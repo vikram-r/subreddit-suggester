@@ -1,9 +1,9 @@
 import akka.actor.Actor.Receive
-import akka.actor.{ActorSystem, ActorLogging, Actor, Props}
+import akka.actor._
 import RedditDataModel._
 import CommentActor._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, Future, ExecutionContext}
 
 /**
   * This actor processes messages containing information about 1 subreddit. It finds relevant information
@@ -16,10 +16,9 @@ object SubredditActor {
 
   case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from MyUserActor
 
-  case class AnalyzedSubredditMessage(suggested: List[SubredditData]) //message sent to MyUserActor
+  case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to MyUserActor
 
   val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(10)
-
 }
 
 class SubredditActor extends Actor with ActorLogging {
@@ -31,18 +30,25 @@ class SubredditActor extends Actor with ActorLogging {
   val redditService = new RedditService
 
   override def receive: Receive = {
-    case SubredditMessage(s, d) ⇒ analyzeSubreddit(s, d)
-
+    case SubredditMessage(s, d) ⇒
+      analyzeSubreddit(s, d)
   }
 
-
   def analyzeSubreddit(subredditData: SubredditData, depth: Int) = {
-    for {
-      r ← redditService.getRecentComments(subredditData)
-      c ← r
-    } {
-      println(c.author)
-      context.actorOf(CommentActor.props) ! CommentMessage(c, depth)
+    println(s"analyzing depth: $depth")
+    val senderActor = sender
+
+    //todo this is going very slow, and eventually stopping
+    for (recentComments ← redditService.getRecentCommentsForSubreddit(subredditData, 10)) {
+      Future.sequence({
+        for {
+          recentComment ← recentComments
+        } yield {
+          for (similarComments ← redditService.getRecentCommentsBySameAuthor(recentComment, 10)) yield {
+            similarComments.map(c ⇒ SubredditData(c.postedSubreddit)).distinct
+          }
+        }
+      }).foreach(s ⇒ senderActor ! AnalyzedSubredditMessage(s.flatten, depth))
     }
   }
 }

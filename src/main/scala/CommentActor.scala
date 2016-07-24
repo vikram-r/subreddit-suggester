@@ -1,7 +1,9 @@
 import akka.actor.Actor.Receive
-import akka.actor.{ActorLogging, Actor, Props}
+import akka.actor.{ActorSystem, ActorLogging, Actor, Props}
 import RedditDataModel._
 import SubredditActor._
+
+import scala.concurrent.ExecutionContext
 
 
 /**
@@ -20,13 +22,22 @@ object CommentActor {
 class CommentActor extends Actor with ActorLogging {
   import CommentActor._
 
+  import ExecutionContext.Implicits.global
+
+  implicit val system: ActorSystem = context.system
+  val redditService = new RedditService
+
   override def receive: Receive = {
     case CommentMessage(u, d) ⇒ analyzeComment(u, d)
 
   }
 
   def analyzeComment(commentData: CommentData, depth: Int) = {
-    val author = commentData.author
-    //todo look up authors recent comments, then send message back to SubredditActor with depth incremented
+    for{
+      comments ← redditService.getRecentCommentsBySameAuthor(commentData, 10)
+      subreddit ← comments.map(_.postedSubreddit).distinct
+    } {
+        context.actorOf(SubredditActor.props) ! SubredditMessage(SubredditData(subreddit), depth + 1)
+    }
   }
 }

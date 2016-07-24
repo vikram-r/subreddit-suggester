@@ -83,8 +83,13 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
     (IO(Http) ? (Get(Uri(url)) ~> addCredentials(token))).mapTo[HttpResponse]
   }
 
-  def getRecentCommentsForSubreddit(s: SubredditData): Future[HttpResponse] = {
-    val url = s"$BASE_URL/r/${s.name}/comments.json?limit=100"
+  def getRecentCommentsForSubreddit(s: SubredditData, limit: Int): Future[HttpResponse] = {
+    val url = s"$BASE_URL/r/${s.name}/comments.json?limit=$limit"
+    (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
+  }
+
+  def getRecentCommentsForUser(u: String, limit: Int): Future[HttpResponse] = {
+    val url = s"$BASE_URL/user/$u.json?limit=$limit"
     (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
   }
 }

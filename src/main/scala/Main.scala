@@ -4,6 +4,7 @@ import akka.actor.{ActorSystem, Props}
 import akka.dispatch.ExecutionContexts._
 import akka.pattern.ask
 import akka.util.Timeout
+import RedditDataModel._
 
 object Main {
   //static main for gradle entry point
@@ -23,11 +24,27 @@ object Main {
 
     for (result ← done) {
       result match {
-        case DoneMessage(None, r) ⇒ println(r) //results
+        case DoneMessage(None, r) ⇒
+          println("DONE!")
+          prettyPrintResults(r)
+          //todo make output pretty
+
         case DoneMessage(Some(e), r) ⇒ println(e) //terminated early
       }
 
       context.terminate()
+    }
+  }
+
+  def prettyPrintResults(results: Map[Int, List[SubredditData]]): Unit = {
+    println("~~~~RESULTS~~~~")
+    println(results.keys)
+    for {
+      depth ← results.keys
+      subreddits ← results.get(depth)
+      s = subreddits.distinct.map(_.name)
+    } {
+      println(s"Depth $depth: ${s.mkString(",")}")
     }
   }
 }

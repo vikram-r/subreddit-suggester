@@ -41,8 +41,13 @@ class RedditService(implicit val system: ActorSystem) {
     response.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsSubredditData)
   }
 
-  def getRecentComments(subredditData: SubredditData): Future[List[CommentData]] = {
-    val response = apiWrapper.getRecentCommentsForSubreddit(subredditData)
+  def getRecentCommentsForSubreddit(subredditData: SubredditData, limit: Int): Future[List[CommentData]] = {
+    val response = apiWrapper.getRecentCommentsForSubreddit(subredditData, limit)
+    response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsCommentData))
+  }
+
+  def getRecentCommentsBySameAuthor(commentData: CommentData, limit: Int): Future[List[CommentData]] = {
+    val response = apiWrapper.getRecentCommentsForUser(commentData.author, limit)
     response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsCommentData))
   }
 

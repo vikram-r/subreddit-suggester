@@ -18,22 +18,21 @@ object RedditDataModel {
   class RedditListingElement(val kind: String, val data: Map[String, JsValue]) {
     lazy val dataAsSubredditData = {
       require(kind == "t5")
-      SubredditData(data)
+      SubredditData(name = data.get("display_name").map(_.convertTo[String]).get)
     }
 
     lazy val dataAsCommentData = {
       require(kind == "t1")
-      CommentData(data)
+      CommentData(
+        author = data.get("author").map(_.convertTo[String]).get,
+        comment = data.get("body").map(_.convertTo[String]).get,
+        postedSubreddit = data.get("subreddit").map(_.convertTo[String]).get
+      )
     }
   }
 
-  case class SubredditData(data: Map[String, JsValue]) {
-    lazy val name = data.get("display_name").map(_.convertTo[String]).get
-  }
+  case class SubredditData(name: String)
 
-  case class CommentData(data: Map[String, JsValue]) {
-    lazy val author = data.get("author").map(_.convertTo[String]).get
-    lazy val comment = data.get("body").map(_.convertTo[String]).get
-  }
+  case class CommentData(author: String, comment: String, postedSubreddit: String)
 
 }
