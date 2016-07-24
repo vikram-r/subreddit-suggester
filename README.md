@@ -1,8 +1,6 @@
 # subreddit-suggester (for Reddit)
 A tool that recommends [subreddits](http://www.reddit.com) for a user based on the behavior of users that post in similar subreddits. This tool is
-built using [Akka](http://akka.io/) and [Spray](http://spray.io/). The concept is predicated on the assumption that similar
-people subscribe to similar subreddits. It uses the parallel nature of Akka/Spray to quickly analyze other posters in 
-subscribed subreddits, to determine new subreddits that the user may be interested in.
+built using [Akka](http://akka.io/) and [Spray](http://spray.io/). The concept of the algorithm is based on the assumption that similar people subscribe to similar subreddits. It uses the parallel nature of Akka/Spray to quickly analyze other posters in subscribed subreddits, to determine new subreddits that the user may be interested in.
 
 # How it works
 
