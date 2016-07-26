@@ -5,7 +5,7 @@ import SubredditActor._
 
 import scala.concurrent.ExecutionContext
 
-
+//todo delete this, if I can't figure out cross-depth concurrency
 /**
   * This actor processes messages containing information about 1 comment. It looks up information about the
   * author of the comment to find a list of suggested subreddits (based on the author). The results are sent

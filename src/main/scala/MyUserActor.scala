@@ -38,6 +38,7 @@ class MyUserActor extends Actor with ActorLogging {
   private var currDepth = 1
   private var numProcessed = 0 //number of subreddits processed at the current depth
 
+  //todo also keep track of how many of each we see, so we can rank results
   private var subredditsProcessed: Map[Int, List[SubredditData]] = Map.empty //keeps track of subreddits discovered at each depth
 
   override def receive: Receive = {
@@ -62,29 +63,44 @@ class MyUserActor extends Actor with ActorLogging {
         case None ⇒
           sender ! DoneMessage(reasonNotCompleted = Some("Please re-run with a valid oauth2 token (use -Dtoken=<token>)"))
       }
+
     case AnalyzedSubredditMessage(subreddits, depth) ⇒
-//      require(currDepth == depth, s"currDepth = $currDepth, depth = $depth")
+      //todo hopefully in the future, I can figure out how to not require this condition
+      require(depth == currDepth, s"currDepth = $currDepth is not equal to depth = $depth")
+
       numProcessed += 1
       println(s"numprocessed: $numProcessed, message depth: $depth")
       subredditsProcessed += (subredditsProcessed.get(depth) match {
         case Some(l) ⇒ depth → (l ++ subreddits)
         case None ⇒ depth → subreddits
       })
+      `continue?`()
 
-      //check if we're done processing at this depth
-      if (numProcessed >= numMessagesAtDepth.getOrElse(depth, 0)) {
-        if (currDepth < MyUserActor.MAX_DEPTH) {
-          println(s"done with depth $currDepth, which is < ${MyUserActor.MAX_DEPTH}")
-          numProcessed = 0
-          currDepth += 1
-          findSuggestedSubreddits(subredditsProcessed.get(depth).get, currDepth)
-        } else {
-          //done
-          startActor.foreach(_ ! DoneMessage(suggestedSubreddits = subredditsProcessed))
-        }
-      }
+    case FailedSubredditAnalysisMessage(reason, depth) ⇒
+      //todo this doesn't fix dead letters
+      //uh oh, something went wrong, but should still increment counters so program can terminate
+      println(s"Failed to process a subreddit at depth: $depth")
+      numProcessed += 1
+      `continue?`()
+
     case _ ⇒
       log.error("Invalid Message")
+  }
+
+  private def `continue?`() = {
+    //check if we're done processing at this depth
+    if (numProcessed >= numMessagesAtDepth.getOrElse(currDepth, 0)) {
+      if (currDepth < MyUserActor.MAX_DEPTH) {
+        println(s"done with depth $currDepth, which is < ${MyUserActor.MAX_DEPTH}")
+        numProcessed = 0
+        currDepth += 1
+        //todo 0 subreddits found at a depth is an edge case, which will either cause a NSEE here, or prevent program from terminating
+        findSuggestedSubreddits(subredditsProcessed.get(currDepth - 1).get, currDepth)
+      } else {
+        //done
+        startActor.foreach(_ ! DoneMessage(suggestedSubreddits = subredditsProcessed))
+      }
+    }
   }
 
   def findMySubscribedSubreddits()(implicit token: OAuth2BearerToken) = {
@@ -98,4 +114,5 @@ class MyUserActor extends Actor with ActorLogging {
     //send a message per subreddit to SubredditActor
     for (s ← subreddits) context.actorOf(SubredditActor.props) ! SubredditMessage(s, depth)
   }
+
 }

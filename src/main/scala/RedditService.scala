@@ -38,17 +38,20 @@ class RedditService(implicit val system: ActorSystem) {
 
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[SubredditData] = {
     val response = Await.result(apiWrapper.getSubscribedSubreddits, Duration.Inf)
+    //todo failure case
     response.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsSubredditData)
   }
 
+  //todo comments are filtering out "t3" kinds, which are selfposts and links
   def getRecentCommentsForSubreddit(subredditData: SubredditData, limit: Int): Future[List[CommentData]] = {
     val response = apiWrapper.getRecentCommentsForSubreddit(subredditData, limit)
-    response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsCommentData))
+    response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.filter(_.kind == "t1").map(_.dataAsCommentData))
   }
 
+  //todo comments are filtering out "t3" kinds, which are selfposts and links
   def getRecentCommentsBySameAuthor(commentData: CommentData, limit: Int): Future[List[CommentData]] = {
     val response = apiWrapper.getRecentCommentsForUser(commentData.author, limit)
-    response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsCommentData))
+    response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.filter(_.kind == "t1").map(_.dataAsCommentData))
   }
 
 }

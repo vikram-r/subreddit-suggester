@@ -22,6 +22,7 @@ object RedditDataModel {
     }
 
     lazy val dataAsCommentData = {
+      //todo there should be a different representation for kind = "t3", which are selfposts/link submissions
       require(kind == "t1")
       CommentData(
         author = data.get("author").map(_.convertTo[String]).get,

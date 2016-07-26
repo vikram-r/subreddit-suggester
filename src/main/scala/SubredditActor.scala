@@ -4,6 +4,7 @@ import RedditDataModel._
 import CommentActor._
 
 import scala.concurrent.{Await, Future, ExecutionContext}
+import scala.util.{Success, Failure}
 
 /**
   * This actor processes messages containing information about 1 subreddit. It finds relevant information
@@ -17,6 +18,8 @@ object SubredditActor {
   case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from MyUserActor
 
   case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to MyUserActor
+
+  case class FailedSubredditAnalysisMessage(reason: Throwable, depth: Int) //message sent to MyUserActor
 
   val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(10)
 }
@@ -37,18 +40,23 @@ class SubredditActor extends Actor with ActorLogging {
   def analyzeSubreddit(subredditData: SubredditData, depth: Int) = {
     println(s"analyzing depth: $depth")
     val senderActor = sender
-
-    //todo this is going very slow, and eventually stopping
-    for (recentComments ← redditService.getRecentCommentsForSubreddit(subredditData, 10)) {
+    for (recentComments ← redditService.getRecentCommentsForSubreddit(subredditData, 2)) {
+      println(s"got ${recentComments.size} recent comments for sub")
       Future.sequence({
         for {
           recentComment ← recentComments
         } yield {
-          for (similarComments ← redditService.getRecentCommentsBySameAuthor(recentComment, 10)) yield {
+          for (similarComments ← redditService.getRecentCommentsBySameAuthor(recentComment, 2)) yield {
+            println(s"~~~got ${similarComments.size} similar comments")
             similarComments.map(c ⇒ SubredditData(c.postedSubreddit)).distinct
           }
         }
-      }).foreach(s ⇒ senderActor ! AnalyzedSubredditMessage(s.flatten, depth))
+      }).onComplete {
+        case Success(s) ⇒ senderActor ! AnalyzedSubredditMessage(s.flatten, depth)
+        case Failure(e) ⇒
+          //todo get something more specific, which message exactly failed
+          senderActor ! FailedSubredditAnalysisMessage(e, depth)
+      }
     }
   }
 }
