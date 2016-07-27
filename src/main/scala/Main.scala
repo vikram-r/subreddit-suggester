@@ -36,15 +36,15 @@ object Main {
     }
   }
 
-  def prettyPrintResults(results: Map[Int, List[SubredditData]]): Unit = {
+  def prettyPrintResults(results: Map[Int, Map[SubredditData, Int]]): Unit = {
     println("~~~~RESULTS~~~~")
-    println(results.keys)
-    for {
-      depth ← results.keys
-      subreddits ← results.get(depth)
-      s = subreddits.distinct.map(_.name)
-    } {
-      println(s"Depth $depth: ${s.mkString(",")}")
-    }
+    val lineSep = "\n-----------\n"
+    println((for (depth ← results.keySet) yield {
+        s"Depth: $depth$lineSep" + (
+          for {
+            subredditMap ← results.get(depth).toSeq
+            (s, c) ← subredditMap.toList.sortBy(_._2).reverse
+          } yield s"${s.name} - $c").mkString("\n")
+      }).mkString(lineSep))
   }
 }

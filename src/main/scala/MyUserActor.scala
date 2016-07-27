@@ -17,7 +17,7 @@ object MyUserActor {
                           code: Option[String])
 
   case class DoneMessage(reasonNotCompleted: Option[String] = None,
-                         suggestedSubreddits: Map[Int, List[SubredditData]] = Map.empty)
+                         suggestedSubreddits: Map[Int, Map[SubredditData, Int]] = Map.empty)
 
   val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(3)
 }
@@ -39,7 +39,17 @@ class MyUserActor extends Actor with ActorLogging {
   private var numProcessed = 0 //number of subreddits processed at the current depth
 
   //todo also keep track of how many of each we see, so we can rank results
-  private var subredditsProcessed: Map[Int, List[SubredditData]] = Map.empty //keeps track of subreddits discovered at each depth
+  private var subredditsProcessed: Map[Int, Map[SubredditData, Int]] = Map.empty //keeps track of subreddits discovered at each depth
+
+  //just for fun
+  private implicit class CounterMap[A](map: Map[A, Int]) {
+    //update the map with a new key A, and associated increment the counter value. If key does not exist, add it to map
+    def updateCounter(k: A): Map[A, Int] =
+      map + (k → (map.getOrElse(k, 0) + 1))
+
+    def updateCounters(keys: TraversableOnce[A]): Map[A, Int] =
+      (map /: keys)((m, k) ⇒ m.updateCounter(k))
+  }
 
   override def receive: Receive = {
     case StartMessage(t, c) ⇒
@@ -67,13 +77,9 @@ class MyUserActor extends Actor with ActorLogging {
     case AnalyzedSubredditMessage(subreddits, depth) ⇒
       //todo hopefully in the future, I can figure out how to not require this condition
       require(depth == currDepth, s"currDepth = $currDepth is not equal to depth = $depth")
-
-      numProcessed += 1
       println(s"numprocessed: $numProcessed, message depth: $depth")
-      subredditsProcessed += (subredditsProcessed.get(depth) match {
-        case Some(l) ⇒ depth → (l ++ subreddits)
-        case None ⇒ depth → subreddits
-      })
+      numProcessed += 1
+      subredditsProcessed += (depth → subredditsProcessed.getOrElse(depth, Map.empty).updateCounters(subreddits))
       `continue?`()
 
     case FailedSubredditAnalysisMessage(reason, depth) ⇒
@@ -97,7 +103,7 @@ class MyUserActor extends Actor with ActorLogging {
         numProcessed = 0
         currDepth += 1
         //todo 0 subreddits found at a depth is an edge case, which will either cause a NSEE here, or prevent program from terminating
-        findSuggestedSubreddits(subredditsProcessed.get(currDepth - 1).get, currDepth)
+        findSuggestedSubreddits(subredditsProcessed.get(currDepth - 1).get.keySet, currDepth)
       } else {
         //done
         startActor.foreach(_ ! DoneMessage(suggestedSubreddits = subredditsProcessed))
@@ -107,10 +113,10 @@ class MyUserActor extends Actor with ActorLogging {
 
   def findMySubscribedSubreddits()(implicit token: OAuth2BearerToken) = {
     println(s"Using authenticated token: ${token.token}")
-    redditService.getSubscribedSubreddits() //get subreddits user is subscribed to
+    redditService.getSubscribedSubreddits().toSet //get subreddits user is subscribed to
   }
 
-  def findSuggestedSubreddits(subreddits: List[SubredditData], depth: Int): Unit = {
+  def findSuggestedSubreddits(subreddits: Set[SubredditData], depth: Int): Unit = {
     println(s"Starting for Depth: $depth, with ${subreddits.size} messages!")
     numMessagesAtDepth += depth → subreddits.size //record # messages sent
     //send a message per subreddit to SubredditActor

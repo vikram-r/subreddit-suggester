@@ -21,7 +21,6 @@ object SubredditActor {
 
   case class FailedSubredditAnalysisMessage(reason: Throwable, depth: Int) //message sent to MyUserActor
 
-  val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(10)
 }
 
 class SubredditActor extends Actor with ActorLogging {
@@ -38,7 +37,6 @@ class SubredditActor extends Actor with ActorLogging {
   }
 
   def analyzeSubreddit(subredditData: SubredditData, depth: Int) = {
-    println(s"analyzing depth: $depth")
     val senderActor = sender
     for (recentComments ← redditService.getRecentCommentsForSubreddit(subredditData, 2)) {
       println(s"got ${recentComments.size} recent comments for sub")
@@ -47,7 +45,7 @@ class SubredditActor extends Actor with ActorLogging {
           recentComment ← recentComments
         } yield {
           for (similarComments ← redditService.getRecentCommentsBySameAuthor(recentComment, 2)) yield {
-            println(s"~~~got ${similarComments.size} similar comments")
+            println(s"got ${similarComments.size} similar comments")
             similarComments.map(c ⇒ SubredditData(c.postedSubreddit)).distinct
           }
         }
