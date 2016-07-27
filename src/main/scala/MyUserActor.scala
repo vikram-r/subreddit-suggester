@@ -19,7 +19,7 @@ object MyUserActor {
   case class DoneMessage(reasonNotCompleted: Option[String] = None,
                          suggestedSubreddits: Map[Int, List[SubredditData]] = Map.empty)
 
-  val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(5)
+  val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(3)
 }
 
 class MyUserActor extends Actor with ActorLogging {
@@ -80,6 +80,7 @@ class MyUserActor extends Actor with ActorLogging {
       //todo this doesn't fix dead letters
       //uh oh, something went wrong, but should still increment counters so program can terminate
       println(s"Failed to process a subreddit at depth: $depth")
+      println(reason.printStackTrace())
       numProcessed += 1
       `continue?`()
 
@@ -89,6 +90,7 @@ class MyUserActor extends Actor with ActorLogging {
 
   private def `continue?`() = {
     //check if we're done processing at this depth
+    println(s"numProcessed: $numProcessed vs numMessagesAtDepth: ${numMessagesAtDepth.getOrElse(currDepth, 0)}")
     if (numProcessed >= numMessagesAtDepth.getOrElse(currDepth, 0)) {
       if (currDepth < MyUserActor.MAX_DEPTH) {
         println(s"done with depth $currDepth, which is < ${MyUserActor.MAX_DEPTH}")

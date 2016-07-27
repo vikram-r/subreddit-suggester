@@ -14,7 +14,7 @@ object Main {
     val token = sys.props.get("token")
     val code = sys.props.get("code")
 
-    implicit val timeout = Timeout(30, TimeUnit.SECONDS)
+    implicit val timeout = Timeout(30, TimeUnit.MINUTES)
     implicit val executionContext = global
 
     val context = ActorSystem("System")

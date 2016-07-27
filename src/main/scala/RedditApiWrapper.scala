@@ -15,7 +15,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 object RedditApiWrapper {
-  implicit val timeout = Timeout(30, TimeUnit.SECONDS)
+  implicit val timeout = Timeout(5, TimeUnit.MINUTES)
 }
 
 
