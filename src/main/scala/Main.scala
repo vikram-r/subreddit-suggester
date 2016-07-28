@@ -25,9 +25,7 @@ object Main {
     for (result ← done) {
       result match {
         case DoneMessage(None, r) ⇒
-          println("DONE!")
           prettyPrintResults(r)
-          //todo make output pretty
 
         case DoneMessage(Some(e), r) ⇒ println(e) //terminated early
       }
@@ -37,6 +35,7 @@ object Main {
   }
 
   def prettyPrintResults(results: Map[Int, Map[SubredditData, Int]]): Unit = {
+    import CounterMapHelper._
     println("~~~~RESULTS~~~~")
     val lineSep = "\n-----------\n"
     println((for (depth ← results.keySet) yield {
@@ -46,5 +45,9 @@ object Main {
             (s, c) ← subredditMap.toList.sortBy(_._2).reverse
           } yield s"${s.name} - $c").mkString("\n")
       }).mkString(lineSep))
+
+
+    println("~~~~SUMMARY~~~~")
+    println(results.aggregateCounterMaps.toList.sortBy(_._2).reverse.map(t ⇒ t._1.name + s" (${t._2})").mkString("\n"))
   }
 }

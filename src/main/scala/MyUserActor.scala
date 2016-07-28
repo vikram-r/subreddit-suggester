@@ -25,6 +25,7 @@ object MyUserActor {
 class MyUserActor extends Actor with ActorLogging {
   import MyUserActor._
   import SubredditActor._
+  import CounterMapHelper._
 
   //todo can RedditService and/or RedditApiWrapper be singletons?
   //the actorsystem and timeout gets implicitly passed to the RedditService and RedditApiWrapper
@@ -37,19 +38,10 @@ class MyUserActor extends Actor with ActorLogging {
   private var numMessagesAtDepth: Map[Int, Int] = Map.empty //number of messages to process per depth
   private var currDepth = 1
   private var numProcessed = 0 //number of subreddits processed at the current depth
+  private var subscribedSubreddits: Set[SubredditData] = Set.empty
 
-  //todo also keep track of how many of each we see, so we can rank results
   private var subredditsProcessed: Map[Int, Map[SubredditData, Int]] = Map.empty //keeps track of subreddits discovered at each depth
 
-  //just for fun
-  private implicit class CounterMap[A](map: Map[A, Int]) {
-    //update the map with a new key A, and associated increment the counter value. If key does not exist, add it to map
-    def updateCounter(k: A): Map[A, Int] =
-      map + (k → (map.getOrElse(k, 0) + 1))
-
-    def updateCounters(keys: TraversableOnce[A]): Map[A, Int] =
-      (map /: keys)((m, k) ⇒ m.updateCounter(k))
-  }
 
   override def receive: Receive = {
     case StartMessage(t, c) ⇒
@@ -69,7 +61,8 @@ class MyUserActor extends Actor with ActorLogging {
       oauthToken match {
         case Some(oauth) ⇒
           implicit val oAuth2BearerToken = oauth
-          findSuggestedSubreddits(findMySubscribedSubreddits(), currDepth)
+          subscribedSubreddits = findMySubscribedSubreddits()
+          findSuggestedSubreddits(subscribedSubreddits, currDepth)
         case None ⇒
           sender ! DoneMessage(reasonNotCompleted = Some("Please re-run with a valid oauth2 token (use -Dtoken=<token>)"))
       }
@@ -79,7 +72,7 @@ class MyUserActor extends Actor with ActorLogging {
       require(depth == currDepth, s"currDepth = $currDepth is not equal to depth = $depth")
       println(s"numprocessed: $numProcessed, message depth: $depth")
       numProcessed += 1
-      subredditsProcessed += (depth → subredditsProcessed.getOrElse(depth, Map.empty).updateCounters(subreddits))
+      subredditsProcessed += (depth → subredditsProcessed.getOrElse(depth, Map.empty).updateCountersBy1(subreddits.filterNot(subscribedSubreddits.contains)))
       `continue?`()
 
     case FailedSubredditAnalysisMessage(reason, depth) ⇒
