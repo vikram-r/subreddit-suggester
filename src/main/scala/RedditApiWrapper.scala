@@ -23,16 +23,21 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   import RedditApiWrapper._
   import RedditDataModel._
 
-  require(clientId != null, "missing client id")
-  require(clientSecret != null, "missing client secret")
-  require(redirectUri != null, "missing redirect uri")
-
   val BASE_URL = "https://www.reddit.com"
   val BASE_API_URL = s"$BASE_URL/api/v1"
   val OAUTH_BASE_URL = "https://oauth.reddit.com" //use this url as the base after the user is validated with oauth
-  val CLIENT_ID = clientId
-  val CLIENT_SECRET = clientSecret
-  val REDIRECT_URI = redirectUri
+  lazy val CLIENT_ID = {
+    require(clientId != null, "missing client id")
+    clientId
+  }
+  lazy val CLIENT_SECRET = {
+    require(clientSecret != null, "missing client secret")
+    clientSecret
+  }
+  lazy val REDIRECT_URI = {
+    require(redirectUri != null, "missing redirect uri")
+    redirectUri
+  }
 
   /**
     * Synchronous call to request oauth2 authorization.
