@@ -10,7 +10,7 @@ built using [Akka](http://akka.io/) and [Spray](http://spray.io/). The concept o
 
 This tool can be run by either manually providing a list of subreddits, or by authenticating an account via OAuth2 and using the subreddits that user is subscribed to. 
 
-#### Manually Setting Subreddits
+### Manually Setting Subreddits
 
 The simpler method is to manually provide a list of subreddits to use. Simply provide a comma delimited list to the `subreddits` java system property. For example: 
 
@@ -18,7 +18,7 @@ The simpler method is to manually provide a list of subreddits to use. Simply pr
 
 This command will run the program as if you were logged in as a user who is subscribed to only `askreddit`, and `pics`.
 
-#### Using a User's Subscribed Subreddits
+### Using a User's Subscribed Subreddits
 
 Alternatively, you can login to a user, and use that users subscribed subreddits as input. In order to login to a user, you need to create a [valid reddit app](https://ssl.reddit.com/prefs/apps/). Make sure to create it as a "Web App". 
 Once that's done, the `client id` and `client secret` need to be added to the `gradle.properties` file.
