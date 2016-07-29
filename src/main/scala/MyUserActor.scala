@@ -68,7 +68,11 @@ class MyUserActor extends Actor with ActorLogging {
         case Some(sa) ⇒
           subscribedSubreddits = sa
           println(s"Starting for subreddits: ${subscribedSubreddits.map(_.name).mkString(",")}")
-          findSuggestedSubreddits(subscribedSubreddits, currDepth)
+          if (subscribedSubreddits.nonEmpty) {
+            findSuggestedSubreddits(subscribedSubreddits, currDepth)
+          } else {
+            sender ! DoneMessage(reasonNotCompleted = Some("Could not find any valid subreddits from user or inputted list"))
+          }
         case None ⇒
           sender ! DoneMessage(reasonNotCompleted = Some("Please re-run with a valid oauth2 token (use -Dtoken=<token>)"))
       }

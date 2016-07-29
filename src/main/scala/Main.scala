@@ -15,7 +15,6 @@ object Main {
     implicit val executionContext = global
 
     val context = ActorSystem("System")
-    println(sys.props.get("subreddits").map(_.split(',').toSet))
 
     val myUserActor = context.actorOf(MyUserActor.props, "myUserActor")
     val done = myUserActor ? StartMessage(
