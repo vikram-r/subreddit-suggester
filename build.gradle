@@ -44,14 +44,20 @@ task run (type:JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 
     //extract properties from gradle.properties, and pass them as java system properties
-    String client_id = project.property("com.vikram.subredditsuggester.client.id")
-    String client_secret = project.property("com.vikram.subredditsuggester.client_secret")
-    String redirect_uri = project.property("com.vikram.subredditsuggester.redirect_uri")
+    if (project.hasProperty("com.vikram.subredditsuggester.client.id")) {
+        String client_id = project.property("com.vikram.subredditsuggester.client.id")
+        System.setProperty("com.vikram.subredditsuggester.client_id", client_id)
+    }
 
+    if (project.hasProperty("com.vikram.subredditsuggester.client_secret")) {
+        String client_secret = project.property("com.vikram.subredditsuggester.client_secret")
+        System.setProperty("com.vikram.subredditsuggester.client_secret", client_secret)
+    }
 
-    System.setProperty("com.vikram.subredditsuggester.client_id", client_id)
-    System.setProperty("com.vikram.subredditsuggester.client_secret", client_secret)
-    System.setProperty("com.vikram.subredditsuggester.redirect_uri", redirect_uri)
+    if (project.hasProperty("com.vikram.subredditsuggester.redirect_uri")) {
+        String redirect_uri = project.property("com.vikram.subredditsuggester.redirect_uri")
+        System.setProperty("com.vikram.subredditsuggester.redirect_uri", redirect_uri)
+    }
 
     systemProperties System.properties //pass the gradle system properties (set via command line) to jvm
 }

@@ -15,9 +15,9 @@ class RedditService(implicit val system: ActorSystem) {
   import ExecutionContext.Implicits.global
 
   val apiWrapper = new RedditApiWrapper(
-    clientId = sys.props.get("com.vikram.subredditsuggester.client_id").get,
-    clientSecret = sys.props.get("com.vikram.subredditsuggester.client_secret").get,
-    redirectUri = sys.props.get("com.vikram.subredditsuggester.redirect_uri").get
+    clientId = sys.props.get("com.vikram.subredditsuggester.client_id"),
+    clientSecret = sys.props.get("com.vikram.subredditsuggester.client_secret"),
+    redirectUri = sys.props.get("com.vikram.subredditsuggester.redirect_uri")
   )
 
   def oAuthRequestPermissions(): Unit = {

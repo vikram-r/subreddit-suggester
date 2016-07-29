@@ -19,7 +19,7 @@ object RedditApiWrapper {
 }
 
 
-class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: String)(implicit val system: ActorSystem) {
+class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], redirectUri: Option[String])(implicit val system: ActorSystem) {
   import RedditApiWrapper._
   import RedditDataModel._
 
@@ -27,16 +27,16 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   val BASE_API_URL = s"$BASE_URL/api/v1"
   val OAUTH_BASE_URL = "https://oauth.reddit.com" //use this url as the base after the user is validated with oauth
   lazy val CLIENT_ID = {
-    require(clientId != null, "missing client id")
-    clientId
+    require(clientId.isDefined, "missing client id")
+    clientId.get
   }
   lazy val CLIENT_SECRET = {
-    require(clientSecret != null, "missing client secret")
-    clientSecret
+    require(clientSecret.isDefined, "missing client secret")
+    clientSecret.get
   }
   lazy val REDIRECT_URI = {
-    require(redirectUri != null, "missing redirect uri")
-    redirectUri
+    require(redirectUri.isDefined, "missing redirect uri")
+    redirectUri.get
   }
 
   /**
