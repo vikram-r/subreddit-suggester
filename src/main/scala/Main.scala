@@ -11,16 +11,18 @@ object Main {
   def main(args: Array[String]): Unit = {
     import MyUserActor._
 
-    val token = sys.props.get("token")
-    val code = sys.props.get("code")
-
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
     implicit val executionContext = global
 
     val context = ActorSystem("System")
+    println(sys.props.get("subreddits").map(_.split(',').toSet))
 
     val myUserActor = context.actorOf(MyUserActor.props, "myUserActor")
-    val done = myUserActor ? StartMessage(token, code)
+    val done = myUserActor ? StartMessage(
+      token = sys.props.get("token"),
+      code = sys.props.get("code"),
+      manualSubreddits = sys.props.get("subreddits").map(_.split(',').toSet)
+    )
 
     for (result ← done) {
       result match {

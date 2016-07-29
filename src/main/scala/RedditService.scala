@@ -36,6 +36,13 @@ class RedditService(implicit val system: ActorSystem) {
     Try(tokenResponse.entity.asString.parseJson.convertTo[OAuthTokenResponse].access_token).toOption
   }
 
+  def validateSubreddit(name: String): Option[SubredditData] = {
+    Try {
+      val response = apiWrapper.getSubredditInfo(SubredditData(name))
+      response.entity.asString.parseJson.convertTo[RedditListingElement].dataAsSubredditData
+    }.toOption
+  }
+
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[SubredditData] = {
     val response = Await.result(apiWrapper.getSubscribedSubreddits, Duration.Inf)
     //todo failure case

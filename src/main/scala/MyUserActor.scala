@@ -14,7 +14,8 @@ object MyUserActor {
   def props = Props(new MyUserActor)
 
   case class StartMessage(token: Option[String],
-                          code: Option[String])
+                          code: Option[String],
+                          manualSubreddits: Option[Set[String]])
 
   case class DoneMessage(reasonNotCompleted: Option[String] = None,
                          suggestedSubreddits: Map[Int, Map[SubredditData, Int]] = Map.empty)
@@ -44,24 +45,29 @@ class MyUserActor extends Actor with ActorLogging {
 
 
   override def receive: Receive = {
-    case StartMessage(t, c) ⇒
+    case StartMessage(token, code, manualSubreddits) ⇒
       startActor = Some(sender)
-      //resolve oauth token if possible
-      val oauthToken = {
-        t.orElse(
-          c match {
-            case Some(code) ⇒ redditService.oAuthGetToken(code)
+
+      /*
+      If manual subreddits are set, don't login. If token is set use token. If code is set, retrieve token then use it. If none
+      are set, open webpage asking user to login.
+      */
+      manualSubreddits.map(_.flatMap(s ⇒ validateSubreddit(s))).orElse(
+        token.orElse(
+          code match {
+            case Some(c) ⇒
+              redditService.oAuthGetToken(c)
             case None ⇒
               redditService.oAuthRequestPermissions()
               None
-          }
-        ).map(OAuth2BearerToken)
-      }
-
-      oauthToken match {
-        case Some(oauth) ⇒
-          implicit val oAuth2BearerToken = oauth
-          subscribedSubreddits = findMySubscribedSubreddits()
+          }).map {
+          oa ⇒
+            implicit val oAuth2BearerToken = OAuth2BearerToken(oa)
+            findMySubscribedSubreddits()
+        }) match {
+        case Some(sa) ⇒
+          subscribedSubreddits = sa
+          println(s"Starting for subreddits: ${subscribedSubreddits.map(_.name).mkString(",")}")
           findSuggestedSubreddits(subscribedSubreddits, currDepth)
         case None ⇒
           sender ! DoneMessage(reasonNotCompleted = Some("Please re-run with a valid oauth2 token (use -Dtoken=<token>)"))
@@ -114,6 +120,10 @@ class MyUserActor extends Actor with ActorLogging {
     numMessagesAtDepth += depth → subreddits.size //record # messages sent
     //send a message per subreddit to SubredditActor
     for (s ← subreddits) context.actorOf(SubredditActor.props) ! SubredditMessage(s, depth)
+  }
+
+  def validateSubreddit(name: String): Option[SubredditData] = {
+    redditService.validateSubreddit(name)
   }
 
 }

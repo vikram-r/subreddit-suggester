@@ -35,10 +35,11 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   val REDIRECT_URI = redirectUri
 
   /**
-    * First step in getting oauth to work. See: https://github.com/reddit/reddit/wiki/OAuth2
+    * Synchronous call to request oauth2 authorization.
+    * See: https://github.com/reddit/reddit/wiki/OAuth2
     *
-    * @param scope
-    * @return
+    * @param scope the list of scope permissions requested
+    * @return the http response
     */
   def authorizeUser(scope: List[String] = List("mysubreddits","history")): HttpResponse = {
     val authState = UUID.randomUUID()
@@ -51,10 +52,11 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   }
 
   /**
-    * Retreive the access token that lasts for 1 hr. Uses the code extracted from the authorization
-    * redirect url query params.
+    * Synchronous call to retreive the access token that lasts for 1 hr.
+    * Uses the code extracted from the authorization redirect url query params.
     *
     * @param code the code
+    * @return the http response
     */
   def retreiveAccessToken(code: String): HttpResponse = {
     val url = s"$BASE_API_URL/access_token"
@@ -65,10 +67,10 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
   }
 
   /**
-    * Call this endpoint when the token has expired, and a new one needs to be retrieved
+    * Asynchronous call to refresh an expired token
     *
-    * @param refreshToken the refresh token, from the response o
-    * @return
+    * @param refreshToken the refresh token
+    * @return future of the http response
     */
   def refreshAccessToken(refreshToken: String): Future[HttpResponse] = {
     val url = s"$BASE_API_URL/access_token"
@@ -77,17 +79,49 @@ class RedditApiWrapper(clientId: String, clientSecret: String, redirectUri: Stri
     (IO(Http) ? (Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))).mapTo[HttpResponse]
   }
 
-
+  /**
+    * Asynchronous call to get all subscribed subreddits for the logged in user (via oauth2)
+    *
+    * @param token the oauth2 bearer token
+    * @return future of the http response
+    */
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): Future[HttpResponse] = {
     val url = s"$OAUTH_BASE_URL/subreddits/mine/subscriber.json?limit=100"
     (IO(Http) ? (Get(Uri(url)) ~> addCredentials(token))).mapTo[HttpResponse]
   }
 
+  /**
+    * Synchronous call to get more information about this subreddit
+    *
+    * @param s the subreddit to lookup
+    * @return future of the http response
+    */
+  def getSubredditInfo(s: SubredditData): HttpResponse = {
+    val url = s"$BASE_URL/r/${s.name}/about.json?limit=1"
+    val response = (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
+    Await.result(response, Duration.Inf)
+  }
+
+  //todo pagination
+  /**
+    * Asynchronous call to get recent comments for a subreddit
+    *
+    * @param s the subreddit to look up recent comments
+    * @param limit the max number of comments to return
+    * @return future of the http response
+    */
   def getRecentCommentsForSubreddit(s: SubredditData, limit: Int): Future[HttpResponse] = {
     val url = s"$BASE_URL/r/${s.name}/comments.json?limit=$limit"
     (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
   }
 
+  /**
+    * Asynchronous call to get recent comments for a user
+    *
+    * @param u the user to look up recent comments
+    * @param limit the max number of comments to return
+    * @return future of the http response
+    */
   def getRecentCommentsForUser(u: String, limit: Int): Future[HttpResponse] = {
     val url = s"$BASE_URL/user/$u.json?limit=$limit"
     (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
