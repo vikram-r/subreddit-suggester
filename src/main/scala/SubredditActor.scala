@@ -1,15 +1,14 @@
 import akka.actor.Actor.Receive
 import akka.actor._
 import RedditDataModel._
-import CommentActor._
 
 import scala.concurrent.{Await, Future, ExecutionContext}
 import scala.util.{Success, Failure}
 
 /**
   * This actor processes messages containing information about 1 subreddit. It finds relevant information
-  * about the subreddit's users, then delegates user work to a CommentActor. It aggregates the analysis
-  * of the users on this subreddit, and sends the results back to MyUserActor
+  * about the subreddit's users, then analyzes that information to produce a list of new subreddits. The
+  * results are sent back to MyUserActor
   */
 object SubredditActor {
 
