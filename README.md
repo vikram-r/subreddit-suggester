@@ -2,10 +2,6 @@
 A tool that recommends [subreddits](http://www.reddit.com) for a user based on the behavior of users that post in similar subreddits. This tool is
 built using [Akka](http://akka.io/) and [Spray](http://spray.io/). The concept of the algorithm is based on the assumption that similar people subscribe to similar subreddits. It uses the parallel nature of Akka/Spray to quickly analyze other posters in subscribed subreddits, to determine new subreddits that the user may be interested in.
 
-# How it works
-
-//TODO
-
 # Usage
 
 This tool can be run by either manually providing a list of subreddits, or by authenticating an account via OAuth2 and using the subreddits that user is subscribed to. 
@@ -20,7 +16,7 @@ This command will run the program as if you were logged in as a user who is subs
 
 ### Using a User's Subscribed Subreddits
 
-Alternatively, you can login to a user, and use that users subscribed subreddits as input. In order to login to a user, you need to create a [valid reddit app](https://ssl.reddit.com/prefs/apps/). Make sure to create it as a "Web App". 
+Alternatively, you can login to a Reddit account, and use that user's subscribed subreddits as input. To do this, you need to create a [valid reddit app](https://ssl.reddit.com/prefs/apps/). Make sure to create it as a "Web App". 
 Once that's done, the `client id` and `client secret` need to be added to the `gradle.properties` file.
 
 The project first needs to authenticate a user with OAuth2 to gain permission to access the subscribed subreddits for 
@@ -41,7 +37,7 @@ The authenticated token will be printed out, so save it for future use. To run t
 
 `gradle run -Dtoken=<token>`
 
-Eventually your token will expire, which means you will have to repeat the process again to retreive a new valid token.
+You can keep using this command for a while, but eventually your token will expire. You will need to repeat the process to login again.
 
 
 #TODO
