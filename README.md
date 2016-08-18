@@ -4,11 +4,11 @@ built using [Akka](http://akka.io/) and [Spray](http://spray.io/). The concept o
 
 # Usage
 
-This tool can be run by either manually providing a list of subreddits, or by authenticating an account via OAuth2 and using the subreddits that user is subscribed to. 
+This tool can be run by either manually providing a list of subreddits, or by authenticating a Reddit account via OAuth2 and using the subreddits that the user is subscribed to. 
 
 ### Manually Setting Subreddits
 
-The simpler method is to manually provide a list of subreddits to use. Simply provide a comma delimited list to the `subreddits` java system property. For example: 
+The easier method is to manually provide a list of subreddits to use. Simply provide a comma delimited list to the `subreddits` java system property. For example: 
 
 `gradle run -Dsubreddits=askreddit,pics`
 
@@ -40,7 +40,7 @@ The authenticated token will be printed out, so save it for future use. To run t
 You can keep using this command for a while, but eventually your token will expire. You will need to repeat the process to login again.
 
 
-#TODO
+#To Do
 
 This project should eventually be converted into a website. This would simplify the OAuth authentication process. In addition, the
 refresh token should be used, so the user doesn't have to re-authenticate from scratch every time the token expires.
