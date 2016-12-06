@@ -84,15 +84,6 @@ class MyUserActor extends Actor with ActorLogging {
       numProcessed += 1
       subredditsProcessed += (depth → subredditsProcessed.getOrElse(depth, Map.empty).updateCountersBy1(subreddits.filterNot(subscribedSubreddits.contains)))
       `continue?`()
-
-    case FailedSubredditAnalysisMessage(reason, depth) ⇒
-      //todo this doesn't fix dead letters
-      //uh oh, something went wrong, but should still increment counters so program can terminate
-      println(s"Failed to process a subreddit at depth: $depth")
-      println(reason.printStackTrace())
-      numProcessed += 1
-      `continue?`()
-
     case _ ⇒
       log.error("Invalid Message")
   }

@@ -1,9 +1,10 @@
 import akka.actor.Actor.Receive
 import akka.actor._
+import akka.pattern.pipe
 import RedditDataModel._
 
 import scala.concurrent.{Await, Future, ExecutionContext}
-import scala.util.{Success, Failure}
+import scala.util.{Try, Success, Failure}
 
 /**
   * This actor processes messages containing information about 1 subreddit. It finds relevant information
@@ -17,9 +18,6 @@ object SubredditActor {
   case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from MyUserActor
 
   case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to MyUserActor
-
-  case class FailedSubredditAnalysisMessage(reason: Throwable, depth: Int) //message sent to MyUserActor
-
 }
 
 class SubredditActor extends Actor with ActorLogging {
@@ -39,21 +37,32 @@ class SubredditActor extends Actor with ActorLogging {
     val senderActor = sender
     for (recentComments ← redditService.getRecentCommentsForSubreddit(subredditData, 2)) {
       println(s"got ${recentComments.size} recent comments for sub")
-      Future.sequence({
-        for {
-          recentComment ← recentComments
-        } yield {
-          for (similarComments ← redditService.getRecentCommentsBySameAuthor(recentComment, 2)) yield {
-            println(s"got ${similarComments.size} similar comments")
-            similarComments.map(c ⇒ SubredditData(c.postedSubreddit)).distinct
-          }
+      val futures = for {
+        recentComment ← recentComments
+      } yield {
+        for (similarComments ← redditService.getRecentCommentsBySameAuthor(recentComment, 2)) yield {
+          similarComments.map(c ⇒ SubredditData(c.postedSubreddit)).distinct
         }
-      }).onComplete {
-        case Success(s) ⇒ senderActor ! AnalyzedSubredditMessage(s.flatten, depth)
-        case Failure(e) ⇒
-          //todo get something more specific, which message exactly failed
-          senderActor ! FailedSubredditAnalysisMessage(e, depth)
       }
+
+      val result = Future.fold(futures.map(wrapFutureWithTry))(List.empty[SubredditData]) {
+        case (accum, cs) ⇒
+          accum ++ {
+            cs match {
+              case Success(s) ⇒ s
+              case Failure(e) ⇒
+                println(s"Failed getting subreddits from a comment, reason: ${e.getMessage}")
+                List.empty[SubredditData]
+            }
+          }
+      }.map(ls ⇒ AnalyzedSubredditMessage(ls.distinct, depth))
+
+      result.pipeTo(senderActor) // pipe the result back
     }
+  }
+
+  // way to ensure entire subreddit message doesn't fail if 1 comment request throws an exception
+  private def wrapFutureWithTry[T](future: Future[T]): Future[Try[T]] = future.map(Success(_)).recover {
+    case e ⇒ Failure(e)
   }
 }
