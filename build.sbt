@@ -2,7 +2,12 @@ name := "subreddit-suggester"
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file("."))
+  .enablePlugins(PlayScala)
+  .aggregate(engine)
+  .dependsOn(engine)
+
+lazy val engine = project
 
 scalaVersion := "2.11.7"
 
