@@ -1,21 +1,22 @@
 package services
 
-import javax.inject.Singleton
-//import _root_.Engine
-//import _root_.ScalaPlayEngine
+import javax.inject.{Inject, Singleton}
+
+import akka.actor.ActorSystem
+import com.vikram.core.{Engine, ScalaPlayEngine}
 
 /**
   * Singleton wrapper for the subreddit suggester engine
   */
 @Singleton
-class EngineProvider {
+class EngineProvider @Inject() (actorSystem: ActorSystem){
 
   var instance: Engine = _
 
-  def getEngine: engine.Engine = {
+  def getEngine: Engine = {
     if (instance == null) {
       // pass the play library akka actorSystem implicitly
-      import play.api.libs.concurrent.Akka._
+      implicit val context: ActorSystem = actorSystem
       instance = new ScalaPlayEngine()
     }
     instance

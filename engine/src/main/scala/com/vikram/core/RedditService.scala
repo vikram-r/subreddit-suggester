@@ -1,17 +1,21 @@
+package com.vikram.core
+
 import java.awt.Desktop
 import java.net.URI
+
 import akka.actor.ActorSystem
-import akka.util.Timeout
-import spray.http.{HttpResponse, OAuth2BearerToken}
+import spray.http.OAuth2BearerToken
 import spray.json._
+
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Future, Await, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Try
 
 class RedditService(implicit val system: ActorSystem) {
 
-  import RedditDataModel._
   import CustomJsonProtocols._
+  import RedditDataModel._
+
   import ExecutionContext.Implicits.global
 
   val apiWrapper = new RedditApiWrapper(

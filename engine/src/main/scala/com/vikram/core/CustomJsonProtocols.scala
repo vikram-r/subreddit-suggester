@@ -1,5 +1,7 @@
+package com.vikram.core
+
+import RedditDataModel.{OAuthTokenResponse, RedditListing, RedditListingElement, RedditListingThing}
 import spray.json._
-import RedditDataModel._
 
 trait CustomJsonProtocols extends DefaultJsonProtocol {
   implicit val oAuthTokenResponseFormat = jsonFormat5(OAuthTokenResponse)

@@ -1,4 +1,6 @@
-import spray.json.{JsString, JsValue}
+package com.vikram.core
+
+import spray.json.JsValue
 
 object RedditDataModel {
   import CustomJsonProtocols._
@@ -12,6 +14,7 @@ object RedditDataModel {
   /**
     * Generic data for listing api responses for easier json processing. This pattern makes the json
     * processing easier (for now), since most of the response is not needed
+    *
     * @param kind the kind of listing element
     * @param data the actual data stored in a map. The values must be converted to objects before use.
     */

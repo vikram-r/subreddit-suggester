@@ -5,6 +5,9 @@
 # Subreddit Suggester home page
 GET     /                           controllers.LandingPageController.index
 
+# Debug Page
+GET     /debug                           controllers.LandingPageController.debug
+
 # An example controller showing a sample home page
 GET     /home                           controllers.HomeController.index
 # An example controller showing how to use dependency injection

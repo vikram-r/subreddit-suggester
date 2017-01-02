@@ -1,28 +1,25 @@
+package com.vikram.core
+
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorSystem, Props}
+import MyUserActor.{DoneMessage, StartMessage}
+import RedditDataModel.SubredditData
+import akka.actor.ActorSystem
 import akka.dispatch.ExecutionContexts._
-import akka.pattern.ask
 import akka.util.Timeout
-import RedditDataModel._
+import akka.pattern.ask
 
 import scala.concurrent.Future
 
-trait Engine {
-  def run() //todo implement this once you find a good way to load token/code as properties
-
-  def debugRun(token: Option[String] = None,
-               code: Option[String] = None,
-               manualSubreddits: Option[Set[String]] = None): Future[String]
-}
-
+/**
+  * Created by vikram on 1/2/17.
+  */
 class ScalaPlayEngine(implicit val actorSystem: ActorSystem) extends Engine {
 
   override def run(): Unit = ???
 
   //static main for gradle entry point
   override def debugRun(token: Option[String], code: Option[String], manualSubreddits: Option[Set[String]]): Future[String] = {
-    import MyUserActor._
 
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
     implicit val executionContext = global

@@ -1,16 +1,17 @@
+package com.vikram.core
+
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
+import RedditDataModel.SubredditData
 import akka.actor.ActorSystem
-import akka.actor.Status.Success
-import akka.pattern.ask
 import akka.io.IO
+import akka.pattern.ask
 import akka.util.Timeout
-import com.sun.net.httpserver.Authenticator.Failure
 import spray.can.Http
-import spray.http.HttpMethods._
 import spray.http._
 import spray.httpx.RequestBuilding._
+
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
@@ -21,7 +22,6 @@ object RedditApiWrapper {
 
 class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], redirectUri: Option[String])(implicit val system: ActorSystem) {
   import RedditApiWrapper._
-  import RedditDataModel._
 
   val BASE_URL = "https://www.reddit.com"
   val BASE_API_URL = s"$BASE_URL/api/v1"

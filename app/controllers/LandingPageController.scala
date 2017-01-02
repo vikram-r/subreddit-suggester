@@ -29,9 +29,7 @@ class LandingPageController @Inject() (engineProvider: EngineProvider,
     val result = engineProvider.getEngine.debugRun(manualSubreddits = manualSubreddits)
 
 
-    result.map {
-      //    Ok(views.html.results())
-      resultString ⇒
+    result.map { resultString ⇒
         Ok(views.html.results(resultString))
     }
 

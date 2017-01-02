@@ -1,3 +1,4 @@
+package com.vikram.core
 
 /**
   * Helper implicit methods for managing the Map[Int, Map[A, Int]] which records results,

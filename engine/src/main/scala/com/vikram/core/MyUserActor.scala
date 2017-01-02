@@ -1,7 +1,9 @@
+package com.vikram.core
+
+import RedditDataModel.SubredditData
+import SubredditActor.{AnalyzedSubredditMessage, SubredditMessage}
 import akka.actor._
-import akka.pattern
 import spray.http.OAuth2BearerToken
-import RedditDataModel._
 
 /**
   * This actor is the "start" actor. It finds the subreddits the user is currently subscribed to, then
@@ -24,12 +26,11 @@ object MyUserActor {
 }
 
 class MyUserActor extends Actor with ActorLogging {
-  import MyUserActor._
-  import SubredditActor._
   import CounterMapHelper._
+  import MyUserActor._
 
-  //todo can RedditService and/or RedditApiWrapper be singletons?
-  //the actorsystem and timeout gets implicitly passed to the RedditService and RedditApiWrapper
+  //todo can GARBAGE.RedditService and/or GARBAGE.RedditApiWrapper be singletons?
+  //the actorsystem and timeout gets implicitly passed to the GARBAGE.RedditService and GARBAGE.RedditApiWrapper
   implicit val system: ActorSystem = context.system
 
   val redditService = new RedditService
@@ -113,7 +114,7 @@ class MyUserActor extends Actor with ActorLogging {
   def findSuggestedSubreddits(subreddits: Set[SubredditData], depth: Int): Unit = {
     println(s"Starting for Depth: $depth, with ${subreddits.size} messages!")
     numMessagesAtDepth += depth → subreddits.size //record # messages sent
-    //send a message per subreddit to SubredditActor
+    //send a message per subreddit to GARBAGE.SubredditActor
     for (s ← subreddits) context.actorOf(SubredditActor.props) ! SubredditMessage(s, depth)
   }
 

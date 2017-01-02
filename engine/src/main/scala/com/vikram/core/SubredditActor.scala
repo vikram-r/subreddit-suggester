@@ -1,23 +1,24 @@
-import akka.actor.Actor.Receive
+package com.vikram.core
+
+import RedditDataModel._
 import akka.actor._
 import akka.pattern.pipe
-import RedditDataModel._
 
-import scala.concurrent.{Await, Future, ExecutionContext}
-import scala.util.{Try, Success, Failure}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 /**
   * This actor processes messages containing information about 1 subreddit. It finds relevant information
   * about the subreddit's users, then analyzes that information to produce a list of new subreddits. The
-  * results are sent back to MyUserActor
+  * results are sent back to GARBAGE.MyUserActor
   */
 object SubredditActor {
 
   def props = Props(new SubredditActor)
 
-  case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from MyUserActor
+  case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from GARBAGE.MyUserActor
 
-  case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to MyUserActor
+  case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to GARBAGE.MyUserActor
 }
 
 class SubredditActor extends Actor with ActorLogging {

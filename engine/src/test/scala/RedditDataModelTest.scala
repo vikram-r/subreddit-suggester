@@ -1,3 +1,4 @@
+import com.vikram.core.{CustomJsonProtocols, RedditDataModel}
 import org.junit.Test
 import org.junit.Assert._
 import spray.json._
