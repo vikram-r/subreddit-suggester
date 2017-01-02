@@ -29,8 +29,8 @@ class MyUserActor extends Actor with ActorLogging {
   import CounterMapHelper._
   import MyUserActor._
 
-  //todo can GARBAGE.RedditService and/or GARBAGE.RedditApiWrapper be singletons?
-  //the actorsystem and timeout gets implicitly passed to the GARBAGE.RedditService and GARBAGE.RedditApiWrapper
+  //todo can RedditService and/or RedditApiWrapper be singletons?
+  //the actorsystem and timeout gets implicitly passed to the RedditService and RedditApiWrapper
   implicit val system: ActorSystem = context.system
 
   val redditService = new RedditService
@@ -114,7 +114,7 @@ class MyUserActor extends Actor with ActorLogging {
   def findSuggestedSubreddits(subreddits: Set[SubredditData], depth: Int): Unit = {
     println(s"Starting for Depth: $depth, with ${subreddits.size} messages!")
     numMessagesAtDepth += depth → subreddits.size //record # messages sent
-    //send a message per subreddit to GARBAGE.SubredditActor
+    //send a message per subreddit to SubredditActor
     for (s ← subreddits) context.actorOf(SubredditActor.props) ! SubredditMessage(s, depth)
   }
 
