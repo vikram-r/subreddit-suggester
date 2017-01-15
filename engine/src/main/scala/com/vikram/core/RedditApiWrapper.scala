@@ -68,7 +68,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * Uses the code extracted from the authorization redirect url query params.
     *
     * @param code the code
-    * @return the http response
+    * @return the response parsed as an OAuthTokenResponse
     */
   def retreiveAccessToken(code: String): OAuthTokenResponse = {
     val url = s"$BASE_API_URL/access_token"
@@ -98,7 +98,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * Asynchronous call to get all subscribed subreddits for the logged in user (via oauth2)
     *
     * @param token the oauth2 bearer token
-    * @return future of the http response
+    * @return future of the response parsed as a RedditListingThing
     */
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): Future[RedditListingThing] = {
     val url = s"$OAUTH_BASE_URL/subreddits/mine/subscriber.json?limit=100"
@@ -111,7 +111,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * Synchronous call to get more information about this subreddit
     *
     * @param s the subreddit to lookup
-    * @return future of the http response
+    * @return the response parsed as a RedditListingElement
     */
   def getSubredditInfo(s: SubredditData): RedditListingElement = {
     val url = s"$BASE_URL/r/${s.name}/about.json?limit=1"
@@ -127,7 +127,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     *
     * @param s the subreddit to look up recent comments
     * @param limit the max number of comments to return
-    * @return future of the http response
+    * @return future of the response parsed as a RedditListingThing
     */
   def getRecentCommentsForSubreddit(s: SubredditData, limit: Int): Future[RedditListingThing] = {
     val url = s"$BASE_URL/r/${s.name}/comments.json?limit=$limit"
@@ -141,7 +141,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     *
     * @param u the user to look up recent comments
     * @param limit the max number of comments to return
-    * @return future of the http response
+    * @return future of the response parsed as a RedditListingThing
     */
   def getRecentCommentsForUser(u: String, limit: Int): Future[RedditListingThing] = {
     val url = s"$BASE_URL/user/$u.json?limit=$limit"
