@@ -14,20 +14,19 @@ import scala.util.{Failure, Success, Try}
   */
 object SubredditActor {
 
-  def props = Props(new SubredditActor)
+  def props(redditService: RedditService) = Props(new SubredditActor(redditService))
 
   case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from MyUserActor
 
   case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to MyUserActor
 }
 
-class SubredditActor extends Actor with ActorLogging {
+class SubredditActor(redditService: RedditService) extends Actor with ActorLogging {
   import SubredditActor._
 
   import ExecutionContext.Implicits.global
 
   implicit val system: ActorSystem = context.system
-  val redditService = new RedditService
 
   override def receive: Receive = {
     case SubredditMessage(s, d) ⇒

@@ -6,6 +6,7 @@ import MyUserActor.{DoneMessage, StartMessage}
 import RedditDataModel.SubredditData
 import akka.actor.ActorSystem
 import akka.dispatch.ExecutionContexts._
+import akka.stream.Materializer
 import akka.util.Timeout
 import akka.pattern.ask
 
@@ -14,7 +15,15 @@ import scala.concurrent.Future
 /**
   * Created by vikram on 1/2/17.
   */
-class ScalaPlayEngine(implicit val actorSystem: ActorSystem) extends Engine {
+class ScalaPlayEngine(implicit val actorSystem: ActorSystem, mat: Materializer) extends Engine {
+
+  //todo Inject these singletons from EngineProvider instead
+  val apiWrapper = new RedditApiWrapper(
+    clientId = sys.props.get("com.vikram.subredditsuggester.client_id"),
+    clientSecret = sys.props.get("com.vikram.subredditsuggester.client_secret"),
+    redirectUri = sys.props.get("com.vikram.subredditsuggester.redirect_uri")
+  )
+  val redditService = new RedditService(apiWrapper)
 
   override def run(): Unit = ???
 
@@ -22,9 +31,11 @@ class ScalaPlayEngine(implicit val actorSystem: ActorSystem) extends Engine {
   override def debugRun(token: Option[String], code: Option[String], manualSubreddits: Option[Set[String]]): Future[String] = {
 
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
+
+    //todo this should probably be injected
     implicit val executionContext = global
 
-    val myUserActor = actorSystem.actorOf(MyUserActor.props, "myUserActor")
+    val myUserActor = actorSystem.actorOf(MyUserActor.props(redditService), "myUserActor")
     val done = myUserActor ? StartMessage(
       token = token,
       code = code,

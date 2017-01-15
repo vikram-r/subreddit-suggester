@@ -4,13 +4,10 @@ version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
-//todo remove this once I remove spray
-resolvers += "spray repo" at "http://repo.spray.io"
-
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.1",
-  "io.spray" % "spray-client_2.11" % "1.3.3",
-  "io.spray" % "spray-json_2.11" % "1.3.2",
+  "com.typesafe.akka" %% "akka-http" % "10.0.1",
+  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.4",
   "junit" % "junit" % "4.12"
 )
 

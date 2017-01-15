@@ -1,9 +1,10 @@
 package com.vikram.core
 
 import RedditDataModel.{OAuthTokenResponse, RedditListing, RedditListingElement, RedditListingThing}
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 
-trait CustomJsonProtocols extends DefaultJsonProtocol {
+trait CustomJsonProtocols extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val oAuthTokenResponseFormat = jsonFormat5(OAuthTokenResponse)
 
   implicit object redditListingElementFormat extends RootJsonFormat[RedditListingElement] {

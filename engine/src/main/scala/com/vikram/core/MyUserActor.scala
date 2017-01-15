@@ -3,7 +3,7 @@ package com.vikram.core
 import RedditDataModel.SubredditData
 import SubredditActor.{AnalyzedSubredditMessage, SubredditMessage}
 import akka.actor._
-import spray.http.OAuth2BearerToken
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
 
 /**
   * This actor is the "start" actor. It finds the subreddits the user is currently subscribed to, then
@@ -13,7 +13,7 @@ import spray.http.OAuth2BearerToken
 object MyUserActor {
 
   //recommended way to create a Props for an Actor (http://doc.akka.io/docs/akka/snapshot/scala/actors.html)
-  def props = Props(new MyUserActor)
+  def props(redditService: RedditService) = Props(new MyUserActor(redditService))
 
   case class StartMessage(token: Option[String],
                           code: Option[String],
@@ -25,15 +25,13 @@ object MyUserActor {
   val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(3)
 }
 
-class MyUserActor extends Actor with ActorLogging {
+class MyUserActor(redditService: RedditService) extends Actor with ActorLogging {
   import CounterMapHelper._
   import MyUserActor._
 
   //todo can RedditService and/or RedditApiWrapper be singletons?
   //the actorsystem and timeout gets implicitly passed to the RedditService and RedditApiWrapper
   implicit val system: ActorSystem = context.system
-
-  val redditService = new RedditService
 
   private var startActor: Option[ActorRef] = None //reference to start actor
 
@@ -115,7 +113,7 @@ class MyUserActor extends Actor with ActorLogging {
     println(s"Starting for Depth: $depth, with ${subreddits.size} messages!")
     numMessagesAtDepth += depth → subreddits.size //record # messages sent
     //send a message per subreddit to SubredditActor
-    for (s ← subreddits) context.actorOf(SubredditActor.props) ! SubredditMessage(s, depth)
+    for (s ← subreddits) context.actorOf(SubredditActor.props(redditService)) ! SubredditMessage(s, depth)
   }
 
   def validateSubreddit(name: String): Option[SubredditData] = {

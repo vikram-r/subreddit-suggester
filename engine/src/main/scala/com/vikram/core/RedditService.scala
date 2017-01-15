@@ -4,25 +4,19 @@ import java.awt.Desktop
 import java.net.URI
 
 import akka.actor.ActorSystem
-import spray.http.OAuth2BearerToken
-import spray.json._
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import akka.stream.Materializer
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Try
 
-class RedditService(implicit val system: ActorSystem) {
+class RedditService(val apiWrapper: RedditApiWrapper)(implicit val system: ActorSystem, mat: Materializer) {
 
-  import CustomJsonProtocols._
   import RedditDataModel._
 
+  //todo this should probably be injected
   import ExecutionContext.Implicits.global
-
-  val apiWrapper = new RedditApiWrapper(
-    clientId = sys.props.get("com.vikram.subredditsuggester.client_id"),
-    clientSecret = sys.props.get("com.vikram.subredditsuggester.client_secret"),
-    redirectUri = sys.props.get("com.vikram.subredditsuggester.redirect_uri")
-  )
 
   def oAuthRequestPermissions(): Unit = {
     val authResponse = apiWrapper.authorizeUser()
@@ -36,33 +30,32 @@ class RedditService(implicit val system: ActorSystem) {
   }
 
   def oAuthGetToken(code: String): Option[String] = {
-    val tokenResponse = apiWrapper.retreiveAccessToken(code)
-    Try(tokenResponse.entity.asString.parseJson.convertTo[OAuthTokenResponse].access_token).toOption
+    Try(apiWrapper.retreiveAccessToken(code).access_token).toOption
   }
 
   def validateSubreddit(name: String): Option[SubredditData] = {
     Try {
       val response = apiWrapper.getSubredditInfo(SubredditData(name))
-      response.entity.asString.parseJson.convertTo[RedditListingElement].dataAsSubredditData
+      response.dataAsSubredditData
     }.toOption
   }
 
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): List[SubredditData] = {
     val response = Await.result(apiWrapper.getSubscribedSubreddits, Duration.Inf)
     //todo failure case
-    response.entity.asString.parseJson.convertTo[RedditListingThing].data.children.map(_.dataAsSubredditData)
+    response.data.children.map(_.dataAsSubredditData)
   }
 
   //todo comments are filtering out "t3" kinds, which are selfposts and links
   def getRecentCommentsForSubreddit(subredditData: SubredditData, limit: Int): Future[List[CommentData]] = {
     val response = apiWrapper.getRecentCommentsForSubreddit(subredditData, limit)
-    response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.filter(_.kind == "t1").map(_.dataAsCommentData))
+    response.map(_.data.children.filter(_.kind == "t1").map(_.dataAsCommentData))
   }
 
   //todo comments are filtering out "t3" kinds, which are selfposts and links
   def getRecentCommentsBySameAuthor(commentData: CommentData, limit: Int): Future[List[CommentData]] = {
     val response = apiWrapper.getRecentCommentsForUser(commentData.author, limit)
-    response.map(_.entity.asString.parseJson.convertTo[RedditListingThing].data.children.filter(_.kind == "t1").map(_.dataAsCommentData))
+    response.map(_.data.children.filter(_.kind == "t1").map(_.dataAsCommentData))
   }
 
 }

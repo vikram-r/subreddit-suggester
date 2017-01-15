@@ -3,25 +3,30 @@ package com.vikram.core
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import RedditDataModel.SubredditData
+import akka.stream.Materializer
 import akka.actor.ActorSystem
-import akka.io.IO
-import akka.pattern.ask
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.client.RequestBuilding._
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.util.Timeout
-import spray.can.Http
-import spray.http._
-import spray.httpx.RequestBuilding._
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ExecutionContext, Await, Future}
 
 object RedditApiWrapper {
   implicit val timeout = Timeout(5, TimeUnit.MINUTES)
 }
 
 
-class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], redirectUri: Option[String])(implicit val system: ActorSystem) {
+class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], redirectUri: Option[String])(implicit val system: ActorSystem, mat: Materializer) {
   import RedditApiWrapper._
+  import CustomJsonProtocols._
+  import RedditDataModel._
+
+  //todo this should probably be injected
+  import ExecutionContext.Implicits.global
 
   val BASE_URL = "https://www.reddit.com"
   val BASE_API_URL = s"$BASE_URL/api/v1"
@@ -39,6 +44,8 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     redirectUri.get
   }
 
+  val httpClient = Http(system)
+
   /**
     * Synchronous call to request oauth2 authorization.
     * See: https://github.com/reddit/reddit/wiki/OAuth2
@@ -52,7 +59,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     val url = s"$BASE_API_URL/authorize?client_id=$CLIENT_ID&response_type=code&state=$authState&" +
       s"redirect_uri=$REDIRECT_URI&duration=$duration&scope=${scope.mkString(",")}"
 
-    val response = (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
+    val response = httpClient.singleRequest(Get(Uri(url)))
     Await.result(response, Duration.Inf) //oauth login process needs to be synchronous
   }
 
@@ -63,26 +70,29 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * @param code the code
     * @return the http response
     */
-  def retreiveAccessToken(code: String): HttpResponse = {
+  def retreiveAccessToken(code: String): OAuthTokenResponse = {
     val url = s"$BASE_API_URL/access_token"
     val form = FormData(Map("code" → code, "redirect_uri" → REDIRECT_URI, "grant_type" → "authorization_code"))
+    val request = Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET))
+    val response = httpClient.singleRequest(request) flatMap {
+      r ⇒ Unmarshal(r).to[OAuthTokenResponse]
+    }
 
-    val response = (IO(Http) ? (Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))).mapTo[HttpResponse]
     Await.result(response, Duration.Inf)
   }
 
-  /**
-    * Asynchronous call to refresh an expired token
-    *
-    * @param refreshToken the refresh token
-    * @return future of the http response
-    */
-  def refreshAccessToken(refreshToken: String): Future[HttpResponse] = {
-    val url = s"$BASE_API_URL/access_token"
-    val form = FormData(Map("refresh_token" → refreshToken, "grant_type" → "refresh_token"))
-
-    (IO(Http) ? (Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))).mapTo[HttpResponse]
-  }
+//  /**
+//    * Asynchronous call to refresh an expired token
+//    *
+//    * @param refreshToken the refresh token
+//    * @return future of the http response
+//    */
+//  def refreshAccessToken(refreshToken: String): Future[HttpResponse] = {
+//    val url = s"$BASE_API_URL/access_token"
+//    val form = FormData(Map("refresh_token" → refreshToken, "grant_type" → "refresh_token"))
+//
+//    httpClient.singleRequest(Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))
+//  }
 
   /**
     * Asynchronous call to get all subscribed subreddits for the logged in user (via oauth2)
@@ -90,9 +100,11 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * @param token the oauth2 bearer token
     * @return future of the http response
     */
-  def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): Future[HttpResponse] = {
+  def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): Future[RedditListingThing] = {
     val url = s"$OAUTH_BASE_URL/subreddits/mine/subscriber.json?limit=100"
-    (IO(Http) ? (Get(Uri(url)) ~> addCredentials(token))).mapTo[HttpResponse]
+    httpClient.singleRequest(Get(Uri(url)) ~> addCredentials(token)) flatMap {
+      r ⇒ Unmarshal(r).to[RedditListingThing]
+    }
   }
 
   /**
@@ -101,9 +113,11 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * @param s the subreddit to lookup
     * @return future of the http response
     */
-  def getSubredditInfo(s: SubredditData): HttpResponse = {
+  def getSubredditInfo(s: SubredditData): RedditListingElement = {
     val url = s"$BASE_URL/r/${s.name}/about.json?limit=1"
-    val response = (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
+    val response = httpClient.singleRequest(Get(Uri(url))) flatMap {
+      r ⇒ Unmarshal(r).to[RedditListingElement]
+    }
     Await.result(response, Duration.Inf)
   }
 
@@ -115,9 +129,11 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * @param limit the max number of comments to return
     * @return future of the http response
     */
-  def getRecentCommentsForSubreddit(s: SubredditData, limit: Int): Future[HttpResponse] = {
+  def getRecentCommentsForSubreddit(s: SubredditData, limit: Int): Future[RedditListingThing] = {
     val url = s"$BASE_URL/r/${s.name}/comments.json?limit=$limit"
-    (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
+    httpClient.singleRequest(Get(Uri(url))) flatMap {
+      r ⇒ Unmarshal(r).to[RedditListingThing]
+    }
   }
 
   /**
@@ -127,8 +143,10 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * @param limit the max number of comments to return
     * @return future of the http response
     */
-  def getRecentCommentsForUser(u: String, limit: Int): Future[HttpResponse] = {
+  def getRecentCommentsForUser(u: String, limit: Int): Future[RedditListingThing] = {
     val url = s"$BASE_URL/user/$u.json?limit=$limit"
-    (IO(Http) ? Get(Uri(url))).mapTo[HttpResponse]
+    httpClient.singleRequest(Get(Uri(url))) flatMap {
+      r ⇒ Unmarshal(r).to[RedditListingThing]
+    }
   }
 }
