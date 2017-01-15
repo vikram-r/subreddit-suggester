@@ -44,3 +44,5 @@ You can keep using this command for a while, but eventually your token will expi
 
 This project should eventually be converted into a website. This would simplify the OAuth authentication process. In addition, the
 refresh token should be used, so the user doesn't have to re-authenticate from scratch every time the token expires.
+
+(Work is started, see `prjScalaPlay`)
