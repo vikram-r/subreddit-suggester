@@ -15,15 +15,7 @@ import scala.concurrent.Future
 /**
   * Created by vikram on 1/2/17.
   */
-class ScalaPlayEngine(implicit val actorSystem: ActorSystem, mat: Materializer) extends Engine {
-
-  //todo Inject these singletons from EngineProvider instead
-  val apiWrapper = new RedditApiWrapper(
-    clientId = sys.props.get("com.vikram.subredditsuggester.client_id"),
-    clientSecret = sys.props.get("com.vikram.subredditsuggester.client_secret"),
-    redirectUri = sys.props.get("com.vikram.subredditsuggester.redirect_uri")
-  )
-  val redditService = new RedditService(apiWrapper)
+class ScalaPlayEngine(val redditService: RedditService)(implicit val actorSystem: ActorSystem, mat: Materializer) extends Engine {
 
   override def run(): Unit = ???
 
