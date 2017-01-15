@@ -9,7 +9,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.unmarshalling.{Unmarshaller, Unmarshal}
 import akka.util.Timeout
 
 import scala.concurrent.duration.Duration
@@ -47,6 +47,21 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
   val httpClient = Http(system)
 
   /**
+    * Executes the given HttpRequest, and unmarshals the response into the provided type R
+    *
+    * Requires an implicit [[akka.http.javadsl.unmarshalling.Unmarshaller]] of [[HttpResponse]] to R and a [[Materializer]]
+    *
+    * @param request the HttpRequest to execute
+    * @tparam R the type that the HttpResponse entity should be unmarshalled into.
+    * @return
+    */
+  private def requestAndUnmarshalTo[R](request: HttpRequest)(implicit unmarshaller: Unmarshaller[HttpResponse, R], mat: Materializer): Future[R] = {
+    httpClient.singleRequest(request) flatMap {
+      response ⇒ Unmarshal(response).to[R]
+    }
+  }
+
+  /**
     * Synchronous call to request oauth2 authorization.
     * See: https://github.com/reddit/reddit/wiki/OAuth2
     *
@@ -74,9 +89,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     val url = s"$BASE_API_URL/access_token"
     val form = FormData(Map("code" → code, "redirect_uri" → REDIRECT_URI, "grant_type" → "authorization_code"))
     val request = Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET))
-    val response = httpClient.singleRequest(request) flatMap {
-      r ⇒ Unmarshal(r).to[OAuthTokenResponse]
-    }
+    val response = requestAndUnmarshalTo[OAuthTokenResponse](request)
 
     Await.result(response, Duration.Inf)
   }
@@ -102,9 +115,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     */
   def getSubscribedSubreddits()(implicit token: OAuth2BearerToken): Future[RedditListingThing] = {
     val url = s"$OAUTH_BASE_URL/subreddits/mine/subscriber.json?limit=100"
-    httpClient.singleRequest(Get(Uri(url)) ~> addCredentials(token)) flatMap {
-      r ⇒ Unmarshal(r).to[RedditListingThing]
-    }
+    requestAndUnmarshalTo[RedditListingThing](Get(Uri(url)) ~> addCredentials(token))
   }
 
   /**
@@ -115,9 +126,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     */
   def getSubredditInfo(s: SubredditData): RedditListingElement = {
     val url = s"$BASE_URL/r/${s.name}/about.json?limit=1"
-    val response = httpClient.singleRequest(Get(Uri(url))) flatMap {
-      r ⇒ Unmarshal(r).to[RedditListingElement]
-    }
+    val response = requestAndUnmarshalTo[RedditListingElement](Get(Uri(url)))
     Await.result(response, Duration.Inf)
   }
 
@@ -131,9 +140,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     */
   def getRecentCommentsForSubreddit(s: SubredditData, limit: Int): Future[RedditListingThing] = {
     val url = s"$BASE_URL/r/${s.name}/comments.json?limit=$limit"
-    httpClient.singleRequest(Get(Uri(url))) flatMap {
-      r ⇒ Unmarshal(r).to[RedditListingThing]
-    }
+    requestAndUnmarshalTo[RedditListingThing](Get(Uri(url)))
   }
 
   /**
@@ -145,8 +152,6 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     */
   def getRecentCommentsForUser(u: String, limit: Int): Future[RedditListingThing] = {
     val url = s"$BASE_URL/user/$u.json?limit=$limit"
-    httpClient.singleRequest(Get(Uri(url))) flatMap {
-      r ⇒ Unmarshal(r).to[RedditListingThing]
-    }
+    requestAndUnmarshalTo[RedditListingThing](Get(Uri(url)))
   }
 }
