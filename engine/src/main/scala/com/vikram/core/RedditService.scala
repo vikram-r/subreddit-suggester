@@ -11,12 +11,9 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Try
 
-class RedditService(val apiWrapper: RedditApiWrapper)(implicit val system: ActorSystem, mat: Materializer) {
+class RedditService(val apiWrapper: RedditApiWrapper)(implicit val system: ActorSystem, ec: ExecutionContext, mat: Materializer) {
 
   import RedditDataModel._
-
-  //todo this should probably be injected
-  import ExecutionContext.Implicits.global
 
   def oAuthRequestPermissions(): Unit = {
     val authResponse = apiWrapper.authorizeUser()

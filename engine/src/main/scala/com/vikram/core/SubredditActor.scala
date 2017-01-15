@@ -14,19 +14,15 @@ import scala.util.{Failure, Success, Try}
   */
 object SubredditActor {
 
-  def props(redditService: RedditService) = Props(new SubredditActor(redditService))
+  def props(redditService: RedditService)(implicit ec: ExecutionContext) = Props(new SubredditActor(redditService))
 
   case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from MyUserActor
 
   case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to MyUserActor
 }
 
-class SubredditActor(redditService: RedditService) extends Actor with ActorLogging {
+class SubredditActor(redditService: RedditService)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
   import SubredditActor._
-
-  import ExecutionContext.Implicits.global
-
-  implicit val system: ActorSystem = context.system
 
   override def receive: Receive = {
     case SubredditMessage(s, d) ⇒
@@ -56,7 +52,6 @@ class SubredditActor(redditService: RedditService) extends Actor with ActorLoggi
             }
           }
       }.map(ls ⇒ AnalyzedSubredditMessage(ls.distinct, depth))
-
       result.pipeTo(senderActor) // pipe the result back
     }
   }

@@ -1,8 +1,11 @@
 package services
 
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
+import java.util.concurrent.{LinkedBlockingQueue, TimeUnit, ThreadPoolExecutor, Executors}
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
+import akka.dispatch.ExecutionContexts._
 import akka.stream.Materializer
 import com.vikram.core.{RedditService, RedditApiWrapper, Engine, ScalaPlayEngine}
 
@@ -13,6 +16,26 @@ import com.vikram.core.{RedditService, RedditApiWrapper, Engine, ScalaPlayEngine
 class EngineProvider @Inject() (actorSystem: ActorSystem) (implicit val mat: Materializer){
 
   private var instance: Engine = _
+
+  //todo this will almost definitely need tuning
+  // implicitly pass a separate execution context to the io heavy engine
+//  implicit val ec = {
+//    val numThreads = 10
+//    val queueSize = 100
+//
+//    ExecutionContext.fromExecutorService(
+//      new ThreadPoolExecutor(
+//        numThreads,
+//        numThreads,
+//        2L,
+//        TimeUnit.MINUTES,
+//        new LinkedBlockingQueue[Runnable](queueSize),
+//        CallerRunsPolicy
+//      )
+//    )
+//  }
+  //todo for now using Akka execution context. It might be necessary to use a separate one for the actual io work
+  implicit val ec = global
 
   def getEngine: Engine = {
     if (instance == null) {

@@ -5,6 +5,8 @@ import SubredditActor.{AnalyzedSubredditMessage, SubredditMessage}
 import akka.actor._
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 
+import scala.concurrent.ExecutionContext
+
 /**
   * This actor is the "start" actor. It finds the subreddits the user is currently subscribed to, then
   * kicks off messages per subscribed subreddit to other actors. It aggregates the results, then sends
@@ -13,7 +15,7 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 object MyUserActor {
 
   //recommended way to create a Props for an Actor (http://doc.akka.io/docs/akka/snapshot/scala/actors.html)
-  def props(redditService: RedditService) = Props(new MyUserActor(redditService))
+  def props(redditService: RedditService)(implicit ec: ExecutionContext) = Props(new MyUserActor(redditService))
 
   case class StartMessage(token: Option[String],
                           code: Option[String],
@@ -25,13 +27,9 @@ object MyUserActor {
   val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(3)
 }
 
-class MyUserActor(redditService: RedditService) extends Actor with ActorLogging {
+class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
   import CounterMapHelper._
   import MyUserActor._
-
-  //todo can RedditService and/or RedditApiWrapper be singletons?
-  //the actorsystem and timeout gets implicitly passed to the RedditService and RedditApiWrapper
-  implicit val system: ActorSystem = context.system
 
   private var startActor: Option[ActorRef] = None //reference to start actor
 

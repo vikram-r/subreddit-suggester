@@ -20,13 +20,10 @@ object RedditApiWrapper {
 }
 
 
-class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], redirectUri: Option[String])(implicit val system: ActorSystem, mat: Materializer) {
+class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], redirectUri: Option[String])(implicit val system: ActorSystem, ec: ExecutionContext, mat: Materializer) {
   import RedditApiWrapper._
   import CustomJsonProtocols._
   import RedditDataModel._
-
-  //todo this should probably be injected
-  import ExecutionContext.Implicits.global
 
   val BASE_URL = "https://www.reddit.com"
   val BASE_API_URL = s"$BASE_URL/api/v1"

@@ -5,17 +5,16 @@ import java.util.concurrent.TimeUnit
 import MyUserActor.{DoneMessage, StartMessage}
 import RedditDataModel.SubredditData
 import akka.actor.ActorSystem
-import akka.dispatch.ExecutionContexts._
 import akka.stream.Materializer
 import akka.util.Timeout
 import akka.pattern.ask
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Created by vikram on 1/2/17.
   */
-class ScalaPlayEngine(val redditService: RedditService)(implicit val actorSystem: ActorSystem, mat: Materializer) extends Engine {
+class ScalaPlayEngine(val redditService: RedditService)(implicit val actorSystem: ActorSystem, ec: ExecutionContext, mat: Materializer) extends Engine {
 
   override def run(): Unit = ???
 
@@ -23,9 +22,6 @@ class ScalaPlayEngine(val redditService: RedditService)(implicit val actorSystem
   override def debugRun(token: Option[String], code: Option[String], manualSubreddits: Option[Set[String]]): Future[String] = {
 
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
-
-    //todo this should probably be injected
-    implicit val executionContext = global
 
     val myUserActor = actorSystem.actorOf(MyUserActor.props(redditService), "myUserActor")
     val done = myUserActor ? StartMessage(
