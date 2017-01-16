@@ -48,23 +48,18 @@ class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) e
       If manual subreddits are set, don't login. If token is set use token. If code is set, retrieve token then use it. If none
       are set, open webpage asking user to login.
       */
-      manualSubreddits.map(_.flatMap(s ⇒ validateSubreddit(s))).orElse(
-        token.map {
-          oa ⇒
-            implicit val oAuth2BearerToken = OAuth2BearerToken(oa)
-            findMySubscribedSubreddits()
-        }) match {
-        case Some(sa) ⇒
-          subscribedSubreddits = sa
-          println(s"Starting for subreddits: ${subscribedSubreddits.map(_.name).mkString(",")}")
-          if (subscribedSubreddits.nonEmpty) {
+      manualSubreddits.map(_.flatMap(s ⇒ validateSubreddit(s))).orElse(token.map {
+        oa ⇒
+          implicit val oAuth2BearerToken = OAuth2BearerToken(oa)
+          findMySubscribedSubreddits()
+      }) match {
+          case Some(sa) if sa.nonEmpty ⇒
+            subscribedSubreddits = sa
+            println(s"Starting for subreddits: ${subscribedSubreddits.map(_.name).mkString(",")}")
             findSuggestedSubreddits(subscribedSubreddits, currDepth)
-          } else {
-            sender ! DoneMessage(reasonNotCompleted = Some("Could not find any valid subreddits from user or inputted list"))
-          }
-        case None ⇒
-          sender ! DoneMessage(reasonNotCompleted = Some("Please re-run with a valid oauth2 token (use -Dtoken=<token>)"))
-      }
+          case _ ⇒
+            sender ! DoneMessage(reasonNotCompleted = Some("Could not find any valid subreddits"))
+        }
 
     case AnalyzedSubredditMessage(subreddits, depth) ⇒
       //todo hopefully in the future, I can figure out how to not require this condition
