@@ -1,11 +1,21 @@
 @*
  * username = logged in user, if applicable
  *@
-@(title: String)
+@(loginUrl: String, token: Option[String])
 
 @main("Subreddit Suggester") {
 
-    Logged in as @title
+    @token match {
+        case Some(t) => {
+            You are logged in with token: @t
+        }
+        case None => {
+            You are not logged in.
+            <a href="@loginUrl"><b>Click here to login</b></a>
+        }
+
+    }
+
     Hello World!
 
 }

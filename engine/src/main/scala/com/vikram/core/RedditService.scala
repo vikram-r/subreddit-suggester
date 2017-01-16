@@ -2,6 +2,7 @@ package com.vikram.core
 
 import java.awt.Desktop
 import java.net.URI
+import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
@@ -26,8 +27,13 @@ class RedditService(val apiWrapper: RedditApiWrapper)(implicit val system: Actor
     }
   }
 
-  def oAuthGetToken(code: String): Option[String] = {
-    Try(apiWrapper.retreiveAccessToken(code).access_token).toOption
+  def oAuthUrl(authState: UUID, scope: List[String] = List("mysubreddits","history"), duration: String = "permanent"): String = {
+    apiWrapper.authorizationUrl(authState, scope, duration)
+  }
+
+  def oAuthGetToken(code: String): Future[String] = {
+    println("inside")
+    apiWrapper.retreiveAccessToken(code).map(_.access_token)
   }
 
   def validateSubreddit(name: String): Option[SubredditData] = {

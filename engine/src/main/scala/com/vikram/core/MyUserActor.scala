@@ -18,7 +18,6 @@ object MyUserActor {
   def props(redditService: RedditService)(implicit ec: ExecutionContext) = Props(new MyUserActor(redditService))
 
   case class StartMessage(token: Option[String],
-                          code: Option[String],
                           manualSubreddits: Option[Set[String]])
 
   case class DoneMessage(reasonNotCompleted: Option[String] = None,
@@ -42,7 +41,7 @@ class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) e
 
 
   override def receive: Receive = {
-    case StartMessage(token, code, manualSubreddits) ⇒
+    case StartMessage(token, manualSubreddits) ⇒
       startActor = Some(sender)
 
       /*
@@ -50,14 +49,7 @@ class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) e
       are set, open webpage asking user to login.
       */
       manualSubreddits.map(_.flatMap(s ⇒ validateSubreddit(s))).orElse(
-        token.orElse(
-          code match {
-            case Some(c) ⇒
-              redditService.oAuthGetToken(c)
-            case None ⇒
-              redditService.oAuthRequestPermissions()
-              None
-          }).map {
+        token.map {
           oa ⇒
             implicit val oAuth2BearerToken = OAuth2BearerToken(oa)
             findMySubscribedSubreddits()

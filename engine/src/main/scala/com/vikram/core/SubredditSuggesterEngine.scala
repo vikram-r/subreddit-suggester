@@ -14,19 +14,18 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * Created by vikram on 1/2/17.
   */
-class ScalaPlayEngine(val redditService: RedditService)(implicit val actorSystem: ActorSystem, ec: ExecutionContext, mat: Materializer) extends Engine {
+class SubredditSuggesterEngine(val redditService: RedditService)(implicit val actorSystem: ActorSystem, ec: ExecutionContext, mat: Materializer) {
 
-  override def run(): Unit = ???
+  def run() = ???
 
   //static main for gradle entry point
-  override def debugRun(token: Option[String], code: Option[String], manualSubreddits: Option[Set[String]]): Future[String] = {
+  def debugRun(token: Option[String] = None, manualSubreddits: Option[Set[String]]): Future[String] = {
 
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
 
     val myUserActor = actorSystem.actorOf(MyUserActor.props(redditService), "myUserActor")
     val done = myUserActor ? StartMessage(
       token = token,
-      code = code,
       manualSubreddits = manualSubreddits
     )
 

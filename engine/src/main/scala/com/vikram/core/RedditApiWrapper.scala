@@ -58,6 +58,11 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     }
   }
 
+  def authorizationUrl(authState: UUID, scope: List[String], duration: String) = {
+    s"$BASE_API_URL/authorize?client_id=$CLIENT_ID&response_type=code&state=$authState&" +
+      s"redirect_uri=$REDIRECT_URI&duration=$duration&scope=${scope.mkString(",")}"
+  }
+
   /**
     * Synchronous call to request oauth2 authorization.
     * See: https://github.com/reddit/reddit/wiki/OAuth2
@@ -82,13 +87,11 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     * @param code the code
     * @return the response parsed as an OAuthTokenResponse
     */
-  def retreiveAccessToken(code: String): OAuthTokenResponse = {
+  def retreiveAccessToken(code: String): Future[OAuthTokenResponse] = {
     val url = s"$BASE_API_URL/access_token"
     val form = FormData(Map("code" → code, "redirect_uri" → REDIRECT_URI, "grant_type" → "authorization_code"))
     val request = Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET))
-    val response = requestAndUnmarshalTo[OAuthTokenResponse](request)
-
-    Await.result(response, Duration.Inf)
+    requestAndUnmarshalTo[OAuthTokenResponse](request)
   }
 
 //  /**

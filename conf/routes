@@ -6,7 +6,10 @@
 GET     /                           controllers.LandingPageController.index
 
 # Debug Page
-GET     /debug                           controllers.LandingPageController.debug
+GET     /debug                      controllers.LandingPageController.debug
+
+# OAuth2
+GET     /oauth2-callback            controllers.OAuth2Controller.callback(code: Option[String], state: Option[String])
 
 # An example controller showing a sample home page
 GET     /home                           controllers.HomeController.index

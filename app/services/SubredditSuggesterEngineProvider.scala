@@ -7,15 +7,15 @@ import javax.inject.{Inject, Singleton}
 import akka.actor.ActorSystem
 import akka.dispatch.ExecutionContexts._
 import akka.stream.Materializer
-import com.vikram.core.{RedditService, RedditApiWrapper, Engine, ScalaPlayEngine}
+import com.vikram.core.{RedditService, RedditApiWrapper, SubredditSuggesterEngine}
 
 /**
   * Singleton wrapper for the subreddit suggester engine
   */
 @Singleton
-class EngineProvider @Inject() (actorSystem: ActorSystem) (implicit val mat: Materializer){
+class SubredditSuggesterEngineProvider @Inject()(actorSystem: ActorSystem)(implicit val mat: Materializer){
 
-  private var instance: Engine = _
+  private var instance: SubredditSuggesterEngine = _
 
   //todo this will almost definitely need tuning
   // implicitly pass a separate execution context to the io heavy engine
@@ -37,7 +37,7 @@ class EngineProvider @Inject() (actorSystem: ActorSystem) (implicit val mat: Mat
   //todo for now using Akka execution context. It might be necessary to use a separate one for the actual io work
   implicit val ec = global
 
-  def getEngine: Engine = {
+  def getEngine: SubredditSuggesterEngine = {
     if (instance == null) {
       // pass the play library akka actorSystem implicitly
       implicit val context: ActorSystem = actorSystem
@@ -49,7 +49,7 @@ class EngineProvider @Inject() (actorSystem: ActorSystem) (implicit val mat: Mat
         redirectUri = sys.props.get("com.vikram.subredditsuggester.redirect_uri")
       ))
 
-      instance = new ScalaPlayEngine(redditService)
+      instance = new SubredditSuggesterEngine(redditService)
     }
     instance
   }
