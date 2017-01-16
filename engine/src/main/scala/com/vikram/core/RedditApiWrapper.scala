@@ -76,19 +76,6 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
     requestAndUnmarshalTo[OAuthTokenResponse](request)
   }
 
-//  /**
-//    * Asynchronous call to refresh an expired token
-//    *
-//    * @param refreshToken the refresh token
-//    * @return future of the http response
-//    */
-//  def refreshAccessToken(refreshToken: String): Future[HttpResponse] = {
-//    val url = s"$BASE_API_URL/access_token"
-//    val form = FormData(Map("refresh_token" → refreshToken, "grant_type" → "refresh_token"))
-//
-//    httpClient.singleRequest(Post(Uri(url), form) ~> addCredentials(BasicHttpCredentials(CLIENT_ID, CLIENT_SECRET)))
-//  }
-
   /**
     * Asynchronous call to get all subscribed subreddits for the logged in user (via oauth2)
     *

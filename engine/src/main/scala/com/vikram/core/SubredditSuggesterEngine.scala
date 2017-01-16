@@ -18,7 +18,6 @@ class SubredditSuggesterEngine(val redditService: RedditService)(implicit val ac
 
   def run() = ???
 
-  //static main for gradle entry point
   def debugRun(token: Option[String] = None, manualSubreddits: Option[Set[String]]): Future[String] = {
 
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
