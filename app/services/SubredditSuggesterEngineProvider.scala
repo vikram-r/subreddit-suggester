@@ -8,12 +8,13 @@ import akka.actor.ActorSystem
 import akka.dispatch.ExecutionContexts._
 import akka.stream.Materializer
 import com.vikram.core.{RedditService, RedditApiWrapper, SubredditSuggesterEngine}
+import play.Configuration
 
 /**
   * Singleton wrapper for the subreddit suggester engine
   */
 @Singleton
-class SubredditSuggesterEngineProvider @Inject()(actorSystem: ActorSystem)(implicit val mat: Materializer){
+class SubredditSuggesterEngineProvider @Inject()(actorSystem: ActorSystem, conf: Configuration)(implicit val mat: Materializer){
 
   private var instance: SubredditSuggesterEngine = _
 
@@ -44,9 +45,9 @@ class SubredditSuggesterEngineProvider @Inject()(actorSystem: ActorSystem)(impli
 
       //todo find best way to insert system properties via scala play
       val redditService = new RedditService(new RedditApiWrapper(
-        clientId = sys.props.get("com.vikram.subredditsuggester.client_id"),
-        clientSecret = sys.props.get("com.vikram.subredditsuggester.client_secret"),
-        redirectUri = sys.props.get("com.vikram.subredditsuggester.redirect_uri")
+        clientId = Option(conf.getString("com.vikram.subredditsuggester.client_id")),
+        clientSecret = Option(conf.getString("com.vikram.subredditsuggester.client_secret")),
+        redirectUri = Option(conf.getString("com.vikram.subredditsuggester.redirect_uri"))
       ))
 
       instance = new SubredditSuggesterEngine(redditService)
