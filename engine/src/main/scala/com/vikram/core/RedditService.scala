@@ -16,23 +16,11 @@ class RedditService(val apiWrapper: RedditApiWrapper)(implicit val system: Actor
 
   import RedditDataModel._
 
-  def oAuthRequestPermissions(): Unit = {
-    val authResponse = apiWrapper.authorizeUser()
-    for(redirectUrl ← authResponse.headers.find(_.name == "Location").map(_.value)){
-      println(redirectUrl)
-      if(Desktop.isDesktopSupported) {
-        Desktop.getDesktop.browse(new URI(redirectUrl))
-      }
-      println("Pass the 'code' query parameter from the redirect url to this program by running `gradle run -Dcode=123` ")
-    }
-  }
-
   def oAuthUrl(authState: UUID, scope: List[String] = List("mysubreddits","history"), duration: String = "permanent"): String = {
     apiWrapper.authorizationUrl(authState, scope, duration)
   }
 
   def oAuthGetToken(code: String): Future[String] = {
-    println("inside")
     apiWrapper.retreiveAccessToken(code).map(_.access_token)
   }
 

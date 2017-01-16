@@ -64,25 +64,7 @@ class RedditApiWrapper(clientId: Option[String], clientSecret: Option[String], r
   }
 
   /**
-    * Synchronous call to request oauth2 authorization.
-    * See: https://github.com/reddit/reddit/wiki/OAuth2
-    *
-    * @param scope the list of scope permissions requested
-    * @return the http response
-    */
-  def authorizeUser(scope: List[String] = List("mysubreddits","history")): HttpResponse = {
-    val authState = UUID.randomUUID()
-    val duration = "permanent"
-    val url = s"$BASE_API_URL/authorize?client_id=$CLIENT_ID&response_type=code&state=$authState&" +
-      s"redirect_uri=$REDIRECT_URI&duration=$duration&scope=${scope.mkString(",")}"
-
-    val response = httpClient.singleRequest(Get(Uri(url)))
-    Await.result(response, Duration.Inf) //oauth login process needs to be synchronous
-  }
-
-  /**
     * Synchronous call to retreive the access token that lasts for 1 hr.
-    * Uses the code extracted from the authorization redirect url query params.
     *
     * @param code the code
     * @return the response parsed as an OAuthTokenResponse
