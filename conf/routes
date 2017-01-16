@@ -10,6 +10,7 @@ GET     /debug                      controllers.LandingPageController.debug
 
 # OAuth2
 GET     /oauth2-callback            controllers.OAuth2Controller.callback(code: Option[String], state: Option[String])
+GET     /logout                     controllers.OAuth2Controller.logout()
 
 # An example controller showing a sample home page
 GET     /home                           controllers.HomeController.index

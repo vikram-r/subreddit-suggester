@@ -22,8 +22,9 @@ class LandingPageController @Inject() (engineProvider: SubredditSuggesterEngineP
     //todo no need to display token on the page (testing purposes only)
     val token = request.session.get(SESSION_TOKEN_KEY)
     val loginUrl = engineProvider.getEngine.redditService.oAuthUrl(UUID.randomUUID)
+    val logoutUrl = routes.OAuth2Controller.logout().absoluteURL()
 
-    Ok(views.html.index(loginUrl, token))
+    Ok(views.html.index(loginUrl, logoutUrl, token))
   }
 
   def debug = Action.async {

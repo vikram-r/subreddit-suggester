@@ -32,6 +32,11 @@ class OAuth2Controller @Inject() (engineProvider: SubredditSuggesterEngineProvid
     }
   }
 
+  def logout = Action { implicit request ⇒
+    val clearedSession = (request.session - SESSION_AUTH_STATE_KEY) - SESSION_TOKEN_KEY
+    Redirect(routes.LandingPageController.index()).withSession(clearedSession)
+  }
+
 }
 
 object OAuth2Controller {

@@ -1,13 +1,16 @@
 @*
  * username = logged in user, if applicable
  *@
-@(loginUrl: String, token: Option[String])
+@(loginUrl: String, logoutUrl: String, token: Option[String])
 
 @main("Subreddit Suggester") {
 
     @token match {
         case Some(t) => {
             You are logged in with token: @t
+
+            <br>
+            <a href="@logoutUrl"><b>logout</b></a>
         }
         case None => {
             You are not logged in.
@@ -15,7 +18,4 @@
         }
 
     }
-
-    Hello World!
-
 }
