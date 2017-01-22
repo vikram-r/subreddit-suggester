@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
 import play.api.mvc.{Action, Controller}
-import services.SubredditSuggesterEngineProvider
+import services.OAuthSubredditSuggesterEngineProvider
 import OAuth2Controller._
 
 import scala.concurrent.ExecutionContext
@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
   * This is the controller for the main home page
   */
 @Singleton
-class LandingPageController @Inject() (engineProvider: SubredditSuggesterEngineProvider,
+class LandingPageController @Inject() (engineProvider: OAuthSubredditSuggesterEngineProvider,
                                        actorSystem: ActorSystem)(implicit exec: ExecutionContext) extends Controller {
 
   def index = Action { implicit request ⇒

@@ -15,19 +15,14 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * Created by vikram on 1/2/17.
   */
-class SubredditSuggesterEngine(val redditService: RedditService)(implicit val actorSystem: ActorSystem, ec: ExecutionContext, mat: Materializer) {
-
-  def runWithOauthToken(token: String) = {
-    implicit val oAuth2BearerToken = OAuth2BearerToken(token)
-    _start(redditService.getSubscribedSubreddits().toSet)
-  }
+class SubredditSuggesterEngine(val redditService: RedditService)(implicit actorSystem: ActorSystem, ec: ExecutionContext, mat: Materializer) {
 
   def run(manualSubreddits: Set[String]): Future[String] = {
     //todo mistyped subreddits should throw an error, not be silently ignored
     _start(manualSubreddits.flatMap(s ⇒ redditService.validateSubreddit(s)))
   }
 
-  private def _start(subreddits: Set[SubredditData]): Future[String] = {
+  protected def _start(subreddits: Set[SubredditData]): Future[String] = {
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
 
     println(s"Starting for Subreddits: ${subreddits.map(_.name).mkString(",")}")
@@ -67,5 +62,16 @@ class SubredditSuggesterEngine(val redditService: RedditService)(implicit val ac
     println("~~~~RESULTS~~~~")
     println("~~~~SUMMARY~~~~")
     println(resultString)
+  }
+}
+
+/**
+  * SubredditSuggesterEngine that must inject a RedditOauth2Service
+  */
+class OAuthSubredditSuggesterEngine(override val redditService: OAuthRedditService)(implicit actorSystem: ActorSystem, ec: ExecutionContext, mat: Materializer) extends SubredditSuggesterEngine(redditService) {
+
+  def runWithOauthToken(token: String) = {
+    implicit val oAuth2BearerToken = OAuth2BearerToken(token)
+    _start(redditService.getSubscribedSubreddits().toSet)
   }
 }

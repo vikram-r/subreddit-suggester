@@ -4,7 +4,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 import play.api.mvc.{Action, Controller}
-import services.SubredditSuggesterEngineProvider
+import services.OAuthSubredditSuggesterEngineProvider
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * Created by vikram on 1/15/17.
   */
 @Singleton
-class OAuth2Controller @Inject() (engineProvider: SubredditSuggesterEngineProvider)(implicit exec: ExecutionContext) extends Controller {
+class OAuth2Controller @Inject()(engineProvider: OAuthSubredditSuggesterEngineProvider)(implicit exec: ExecutionContext) extends Controller {
   import OAuth2Controller._
 
   val redditService = engineProvider.getEngine.redditService
