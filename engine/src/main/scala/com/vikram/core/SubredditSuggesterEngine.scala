@@ -2,7 +2,7 @@ package com.vikram.core
 
 import java.util.concurrent.TimeUnit
 
-import MyUserActor.{DoneMessage, StartMessage}
+import SupervisorActor.{DoneMessage, StartMessage}
 import RedditDataModel.SubredditData
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
@@ -31,8 +31,8 @@ class SubredditSuggesterEngine(val redditService: RedditService)(implicit val ac
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
 
     println(s"Starting for Subreddits: ${subreddits.map(_.name).mkString(",")}")
-    val myUserActor = actorSystem.actorOf(MyUserActor.props(redditService), "myUserActor")
-    val done = myUserActor ? StartMessage(subreddits)
+    val supervisorActor = actorSystem.actorOf(SupervisorActor.props(redditService), "supervisorActor")
+    val done = supervisorActor ? StartMessage(subreddits)
 
     for (result ← done) yield {
       result match {

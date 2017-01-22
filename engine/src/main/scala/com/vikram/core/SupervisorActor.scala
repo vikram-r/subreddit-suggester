@@ -3,19 +3,17 @@ package com.vikram.core
 import RedditDataModel.SubredditData
 import SubredditActor.{AnalyzedSubredditMessage, SubredditMessage}
 import akka.actor._
-import akka.http.scaladsl.model.headers.OAuth2BearerToken
 
 import scala.concurrent.ExecutionContext
 
 /**
-  * This actor is the "start" actor. It finds the subreddits the user is currently subscribed to, then
-  * kicks off messages per subscribed subreddit to other actors. It aggregates the results, then sends
-  * a complete message back to Main
+  * This actor is the "start" actor. It delegates work per subscribed subreddit to [[SubredditActor]].
+  * It aggregates the results, then sends a complete message back to [[SubredditSuggesterEngine]]
   */
-object MyUserActor {
+object SupervisorActor {
 
   //recommended way to create a Props for an Actor (http://doc.akka.io/docs/akka/snapshot/scala/actors.html)
-  def props(redditService: RedditService)(implicit ec: ExecutionContext) = Props(new MyUserActor(redditService))
+  def props(redditService: RedditService)(implicit ec: ExecutionContext) = Props(new SupervisorActor(redditService))
 
   case class StartMessage(manualSubreddits: Set[SubredditData])
 
@@ -26,9 +24,9 @@ object MyUserActor {
 }
 
 //todo this entire class is a mess
-class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
+class SupervisorActor(redditService: RedditService)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
   import CounterMapHelper._
-  import MyUserActor._
+  import SupervisorActor._
 
   private var startActor: Option[ActorRef] = None //reference to start actor
 
@@ -61,8 +59,8 @@ class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) e
     //check if we're done processing at this depth
     println(s"numProcessed: $numProcessed vs numMessagesAtDepth: ${numMessagesAtDepth.getOrElse(currDepth, 0)}")
     if (numProcessed >= numMessagesAtDepth.getOrElse(currDepth, 0)) {
-      if (currDepth < MyUserActor.MAX_DEPTH) {
-        println(s"done with depth $currDepth, which is < ${MyUserActor.MAX_DEPTH}")
+      if (currDepth < SupervisorActor.MAX_DEPTH) {
+        println(s"done with depth $currDepth, which is < ${SupervisorActor.MAX_DEPTH}")
         numProcessed = 0
         currDepth += 1
         //todo 0 subreddits found at a depth is an edge case, which will either cause a NSEE here, or prevent program from terminating

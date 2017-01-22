@@ -10,15 +10,15 @@ import scala.util.{Failure, Success, Try}
 /**
   * This actor processes messages containing information about 1 subreddit. It finds relevant information
   * about the subreddit's users, then analyzes that information to produce a list of new subreddits. The
-  * results are sent back to MyUserActor
+  * results are sent back to [[SupervisorActor]]
   */
 object SubredditActor {
 
   def props(redditService: RedditService)(implicit ec: ExecutionContext) = Props(new SubredditActor(redditService))
 
-  case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from MyUserActor
+  case class SubredditMessage(subreddit: SubredditData, depth: Int) //message received from SupervisorActor
 
-  case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to MyUserActor
+  case class AnalyzedSubredditMessage(suggested: List[SubredditData], depth: Int) //message sent to SupervisorActor
 }
 
 class SubredditActor(redditService: RedditService)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
