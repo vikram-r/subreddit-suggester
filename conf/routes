@@ -5,8 +5,9 @@
 # Subreddit Suggester home page
 GET     /                           controllers.LandingPageController.index
 
-# Debug Page
+# Debug Pages
 GET     /debug                      controllers.LandingPageController.debug
+GET     /oauthDebugRun              controllers.LandingPageController.oauthDebugRun
 
 # OAuth2
 GET     /oauth2-callback            controllers.OAuth2Controller.callback(code: Option[String], state: Option[String])

@@ -8,7 +8,7 @@ import play.api.mvc.{Action, Controller}
 import services.OAuthSubredditSuggesterEngineProvider
 import OAuth2Controller._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 
 /**
   * This is the controller for the main home page
@@ -32,6 +32,18 @@ class LandingPageController @Inject() (engineProvider: OAuthSubredditSuggesterEn
     val result = engineProvider.getEngine.run(manualSubreddits)
     result.map { resultString ⇒
         Ok(views.html.results(resultString))
+    }
+  }
+
+  def oauthDebugRun = Action.async { implicit request ⇒
+    request.session.get(SESSION_TOKEN_KEY) match {
+      case Some(token) ⇒
+        engineProvider.getEngine.runWithOauthToken(token).map {
+          result ⇒
+            Ok(views.html.results(result))
+        }
+      case None ⇒
+        Future.successful(BadRequest(views.html.results("You are not logged in!")))
     }
   }
 }

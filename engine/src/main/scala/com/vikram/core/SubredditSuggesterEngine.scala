@@ -1,5 +1,6 @@
 package com.vikram.core
 
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import SupervisorActor.{DoneMessage, StartMessage}
@@ -26,7 +27,7 @@ class SubredditSuggesterEngine(val redditService: RedditService)(implicit actorS
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
 
     println(s"Starting for Subreddits: ${subreddits.map(_.name).mkString(",")}")
-    val supervisorActor = actorSystem.actorOf(SupervisorActor.props(redditService), "supervisorActor")
+    val supervisorActor = actorSystem.actorOf(SupervisorActor.props(redditService), s"supervisorActor-${UUID.randomUUID()}")
     val done = supervisorActor ? StartMessage(subreddits)
 
     for (result ← done) yield {
