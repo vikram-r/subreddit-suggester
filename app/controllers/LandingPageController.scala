@@ -28,14 +28,8 @@ class LandingPageController @Inject() (engineProvider: SubredditSuggesterEngineP
   }
 
   def debug = Action.async {
-    val token: Option[String] = None
-    val code: Option[String] = None
-    val manualSubreddits: Option[Set[String]] = Some(Set("askreddit", "pics"))
-
-
-    val result = engineProvider.getEngine.debugRun(manualSubreddits = manualSubreddits)
-
-
+    val manualSubreddits: Set[String] = Set("askreddit", "pics")
+    val result = engineProvider.getEngine.run(manualSubreddits)
     result.map { resultString ⇒
         Ok(views.html.results(resultString))
     }

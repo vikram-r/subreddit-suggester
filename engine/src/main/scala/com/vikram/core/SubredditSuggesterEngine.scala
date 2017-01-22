@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import MyUserActor.{DoneMessage, StartMessage}
 import RedditDataModel.SubredditData
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.stream.Materializer
 import akka.util.Timeout
 import akka.pattern.ask
@@ -16,17 +17,22 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 class SubredditSuggesterEngine(val redditService: RedditService)(implicit val actorSystem: ActorSystem, ec: ExecutionContext, mat: Materializer) {
 
-  def run() = ???
+  def runWithOauthToken(token: String) = {
+    implicit val oAuth2BearerToken = OAuth2BearerToken(token)
+    _start(redditService.getSubscribedSubreddits().toSet)
+  }
 
-  def debugRun(token: Option[String] = None, manualSubreddits: Option[Set[String]]): Future[String] = {
+  def run(manualSubreddits: Set[String]): Future[String] = {
+    //todo mistyped subreddits should throw an error, not be silently ignored
+    _start(manualSubreddits.flatMap(s ⇒ redditService.validateSubreddit(s)))
+  }
 
+  private def _start(subreddits: Set[SubredditData]): Future[String] = {
     implicit val timeout = Timeout(30, TimeUnit.MINUTES)
 
+    println(s"Starting for Subreddits: ${subreddits.map(_.name).mkString(",")}")
     val myUserActor = actorSystem.actorOf(MyUserActor.props(redditService), "myUserActor")
-    val done = myUserActor ? StartMessage(
-      token = token,
-      manualSubreddits = manualSubreddits
-    )
+    val done = myUserActor ? StartMessage(subreddits)
 
     for (result ← done) yield {
       result match {
@@ -39,7 +45,7 @@ class SubredditSuggesterEngine(val redditService: RedditService)(implicit val ac
           ""
       }
       //todo is this correct? If the actorSystem passed in is the Play system, then I think Play handles the lifecycle
-//      actorSystem.terminate()
+//        actorSystem.terminate()
     }
   }
 

@@ -17,8 +17,7 @@ object MyUserActor {
   //recommended way to create a Props for an Actor (http://doc.akka.io/docs/akka/snapshot/scala/actors.html)
   def props(redditService: RedditService)(implicit ec: ExecutionContext) = Props(new MyUserActor(redditService))
 
-  case class StartMessage(token: Option[String],
-                          manualSubreddits: Option[Set[String]])
+  case class StartMessage(manualSubreddits: Set[SubredditData])
 
   case class DoneMessage(reasonNotCompleted: Option[String] = None,
                          suggestedSubreddits: Map[Int, Map[SubredditData, Int]] = Map.empty)
@@ -26,6 +25,7 @@ object MyUserActor {
   val MAX_DEPTH = sys.props.get("depth").map(_.toInt).getOrElse(3)
 }
 
+//todo this entire class is a mess
 class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
   import CounterMapHelper._
   import MyUserActor._
@@ -41,25 +41,10 @@ class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) e
 
 
   override def receive: Receive = {
-    case StartMessage(token, manualSubreddits) ⇒
+    case StartMessage(manualSubreddits) ⇒
       startActor = Some(sender)
-
-      /*
-      If manual subreddits are set, don't login. If token is set use token. If code is set, retrieve token then use it. If none
-      are set, open webpage asking user to login.
-      */
-      manualSubreddits.map(_.flatMap(s ⇒ validateSubreddit(s))).orElse(token.map {
-        oa ⇒
-          implicit val oAuth2BearerToken = OAuth2BearerToken(oa)
-          findMySubscribedSubreddits()
-      }) match {
-          case Some(sa) if sa.nonEmpty ⇒
-            subscribedSubreddits = sa
-            println(s"Starting for subreddits: ${subscribedSubreddits.map(_.name).mkString(",")}")
-            findSuggestedSubreddits(subscribedSubreddits, currDepth)
-          case _ ⇒
-            sender ! DoneMessage(reasonNotCompleted = Some("Could not find any valid subreddits"))
-        }
+      subscribedSubreddits = manualSubreddits
+      findSuggestedSubreddits(subscribedSubreddits, currDepth)
 
     case AnalyzedSubredditMessage(subreddits, depth) ⇒
       //todo hopefully in the future, I can figure out how to not require this condition
@@ -87,11 +72,6 @@ class MyUserActor(redditService: RedditService)(implicit ec: ExecutionContext) e
         startActor.foreach(_ ! DoneMessage(suggestedSubreddits = subredditsProcessed))
       }
     }
-  }
-
-  def findMySubscribedSubreddits()(implicit token: OAuth2BearerToken) = {
-    println(s"Using authenticated token: ${token.token}")
-    redditService.getSubscribedSubreddits().toSet //get subreddits user is subscribed to
   }
 
   def findSuggestedSubreddits(subreddits: Set[SubredditData], depth: Int): Unit = {
