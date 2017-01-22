@@ -1,48 +1,49 @@
 # subreddit-suggester (for Reddit)
-A tool that recommends [subreddits](http://www.reddit.com) for a user based on the behavior of users that post in similar subreddits. This tool is
-built using [Akka](http://akka.io/) and [Spray](http://spray.io/). The concept of the algorithm is based on the assumption that similar people subscribe to similar subreddits. It uses the parallel nature of Akka/Spray to quickly analyze other posters in subscribed subreddits, to determine new subreddits that the user may be interested in.
+A tool that recommends [subreddits](http://www.reddit.com) for a user based on the behavior of users that post in similar subreddits. The engine is built using [Akka](http://akka.io/). The web server is built using the [Play Framework](https://www.playframework.com/). The entire project/dependencies are managed by [sbt](http://www.scala-sbt.org/). The premise of the algorithm is based on the assumption that similar people subscribe to similar subreddits. It uses the parallel nature of Akka to quickly analyze other posters in subscribed subreddits in order to determine new subreddits that the user may be interested in.
 
-# Usage
+# Usage (Web Server)
 
-This tool can be run by either manually providing a list of subreddits, or by authenticating a Reddit account via OAuth2 and using the subreddits that the user is subscribed to. 
+To launch the web server, first run
+```
+sbt
+```
+then 
+```
+run
+```
 
-### Manually Setting Subreddits
+Once the web server is started, navigate to `http://localhost:9000/` to get started.
 
-The easier method is to manually provide a list of subreddits to use. Simply provide a comma delimited list to the `subreddits` java system property. For example: 
+# Configuring the Reddit App
 
-`gradle run -Dsubreddits=askreddit,pics`
+In order to take advantage of all the features in this project, you should link a Reddit application. This will allow users to log in with their Reddit accounts and receive suggestions based on their subscribed subreddits. To configure your Reddit application, you need to create a [valid reddit app](https://ssl.reddit.com/prefs/apps/). Make sure to create it as a "Web App". Once that's done, the `client id`, `client secret`, and `redirect_uri` need to be provided as system properties. For example: 
 
+```
+export REDDIT_CLIENT_ID=awesome_client_id
+export REDDIT_CLIENT_SECRET=yeah_right
+export REDDIT_REDIRECT_URI=http://localhost:9000/oauth2-callback
+```
+(Make sure the `redirect_uri` matches the OAuth2 callback url defined in `routes`. Currently it is `http://localhost:9000/oauth2-callback`).
+
+### Testing (while in development)
+While this project is in development, there are a couple endpoints that can be used for testing. Currently: 
+
+```
+/debug                  runs the engine with a preset list of subreddits
+/oauthDebugRun          runs the engine for the user that is currently logged in
+```
+Note: These routes are purely for development purposes, and are subject to change.
+
+# Using the Engine CLI
+
+The Engine itself has a CLI you can use to test if you don't want to setup the full web server/Reddit application. To use the CLI, you must manually provide a list of subreddits to use (no OAuth2 support). This list should be passed as Java arguments. For example:
+
+```
+sbt "project engine" "run askreddit pics"
+```
 This command will run the program as if you were logged in as a user who is subscribed to only `askreddit`, and `pics`.
 
-### Using a User's Subscribed Subreddits
-
-Alternatively, you can login to a Reddit account, and use that user's subscribed subreddits as input. To do this, you need to create a [valid reddit app](https://ssl.reddit.com/prefs/apps/). Make sure to create it as a "Web App". 
-Once that's done, the `client id` and `client secret` need to be added to the `gradle.properties` file.
-
-The project first needs to authenticate a user with OAuth2 to gain permission to access the subscribed subreddits for 
-a user. To help out, the tool accepts system parameters to authenticate a user.
-
-First simply run:
-
-`gradle run`
-
-This will open up your default web browser with a page asking you for permission to access your subscribed subreddits. Accepting 
-the prompt will redirect you to whatever your `redirect uri` was set to when you configured your reddit app. Extract the 
-`code` query parameter from that URL, then pass it into the following:
-
-`gradle run -Dcode=<code>`
-
-This command will use the code provided to retreive an authenticated token, then use the token to execute the actual program. 
-The authenticated token will be printed out, so save it for future use. To run the program again, you can use: 
-
-`gradle run -Dtoken=<token>`
-
-You can keep using this command for a while, but eventually your token will expire. You will need to repeat the process to login again.
-
-
 #To Do
-
-This project should eventually be converted into a website. This would simplify the OAuth authentication process. In addition, the
-refresh token should be used, so the user doesn't have to re-authenticate from scratch every time the token expires.
-
-(Work is started, see `prjScalaPlay`)
+- The engine is a bit unreliable. There are a few edge cases that cause it to stall indefinitely.
+- Implement caching
+- A lot of front-end work remaining
