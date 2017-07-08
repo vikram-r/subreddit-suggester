@@ -1,5 +1,5 @@
 # subreddit-suggester (for Reddit)
-A tool that recommends [subreddits](http://www.reddit.com) for a user based on the behavior of users that post in similar subreddits. The engine is built using [Akka](http://akka.io/). The web server is built using the [Play Framework](https://www.playframework.com/). The entire project/dependencies are managed by [sbt](http://www.scala-sbt.org/). The premise of the algorithm is based on the assumption that similar people subscribe to similar subreddits. It uses the parallel nature of Akka to quickly analyze other posters in subscribed subreddits in order to determine new subreddits that the user may be interested in.
+A tool that recommends [subreddits](http://www.reddit.com) for a user based on the behavior of users that post in similar subreddits. The engine is built using [Akka](http://akka.io/). The web server is built using the [Play Framework](https://www.playframework.com/). The entire project/dependencies are managed by [sbt](http://www.scala-sbt.org/). The premise of the algorithm is based on the assumption that similar people subscribe to similar subreddits. It concurrently analyzes other posters in the current user's subscribed subreddits (recursively), and determines new subreddits that the current user may be interested in.
 
 # Usage (Web Server)
 
@@ -25,7 +25,7 @@ export REDDIT_REDIRECT_URI=http://localhost:9000/oauth2-callback
 ```
 (Make sure the `redirect_uri` matches the OAuth2 callback url defined in `routes`. Currently it is `http://localhost:9000/oauth2-callback`).
 
-### Testing (while in development)
+## Testing (while in development)
 While this project is in development, there are a couple endpoints that can be used for testing. Currently: 
 
 ```
@@ -43,7 +43,7 @@ sbt "project engine" "run askreddit pics"
 ```
 This command will run the program as if you were logged in as a user who is subscribed to only `askreddit`, and `pics`.
 
-#To Do
+### To Do
 - The engine is a bit unreliable. There are a few edge cases that cause it to stall indefinitely.
 - Implement caching
 - A lot of front-end work remaining
