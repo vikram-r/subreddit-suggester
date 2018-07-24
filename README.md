@@ -1,5 +1,5 @@
 # subreddit-suggester (for Reddit)
-A tool that recommends [subreddits](http://www.reddit.com) for a user based on the behavior of users that post in similar subreddits. The engine is built using [Akka](http://akka.io/). The web server is built using the [Play Framework](https://www.playframework.com/). The entire project/dependencies are managed by [sbt](http://www.scala-sbt.org/). The premise of the algorithm is based on the assumption that similar people subscribe to similar subreddits. It concurrently analyzes other posters in the current user's subscribed subreddits (recursively), and determines new subreddits that the current user may be interested in.
+A tool that recommends [subreddits](http://www.reddit.com) for a user based on the behavior of users that post in similar subreddits. The engine is built using [Akka](http://akka.io/). The web server is built using the [Play Framework](https://www.playframework.com/). The entire project/dependencies are managed by [sbt](http://www.scala-sbt.org/). The algorithm is based on the premise that similar people subscribe to similar subreddits. It concurrently analyzes other posters in the current user's subscribed subreddits (recursively), and determines new subreddits that the current user may be interested in.
 
 # Usage (Web Server)
 
